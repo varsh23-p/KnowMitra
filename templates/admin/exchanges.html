@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Admin – Exchanges{% endblock %}
+{% block page_title %}Monitor Exchanges{% endblock %}
+
+{% block content %}
+<div class="page-header flex-between">
+  <div><h1>Skill Exchanges</h1><p>{{ exchanges_pg.total }} total exchange requests</p></div>
+  <a href="{{ url_for('admin.index') }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<!-- Filter by status -->
+<div class="card mb-3">
+  <div class="card-body" style="display:flex;gap:.5rem;flex-wrap:wrap;">
+    {% for s in ['', 'pending', 'accepted', 'completed', 'rejected', 'cancelled'] %}
+      <a href="{{ url_for('admin.exchanges', status=s) }}"
+         class="btn btn-sm {{ 'btn-primary' if status == s else 'btn-ghost' }}">
+        {{ s.title() or 'All' }}
+      </a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>From</th><th>To</th><th>Skill Requested</th><th>Skill Offered</th><th>Status</th><th>Date</th></tr>
+      </thead>
+      <tbody>
+        {% for ex in exchanges_pg.items %}
+        <tr>
+          <td><strong>{{ ex.sender.full_name }}</strong><div style="font-size:.78rem;color:var(--text-muted);">{{ ex.sender.email }}</div></td>
+          <td><strong>{{ ex.receiver.full_name }}</strong><div style="font-size:.78rem;color:var(--text-muted);">{{ ex.receiver.email }}</div></td>
+          <td>{{ ex.skill_requested.name if ex.skill_requested else '–' }}</td>
+          <td>{{ ex.skill_offered.name if ex.skill_offered else '–' }}</td>
+          <td>
+            <span class="badge badge-{{ 'warning' if ex.status=='pending' else 'success' if ex.status=='accepted' else 'info' if ex.status=='completed' else 'danger' }}">
+              {{ ex.status }}
+            </span>
+          </td>
+          <td style="font-size:.82rem;color:var(--text-muted);">{{ ex.created_at.strftime('%b %d, %Y') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if exchanges_pg.pages > 1 %}
+  <div class="card-footer">
+    <div class="pagination">
+      <a href="{{ url_for('admin.exchanges', page=exchanges_pg.prev_num, status=status) }}"
+         class="page-btn {{ 'disabled' if not exchanges_pg.has_prev }}"><i class="fas fa-chevron-left"></i></a>
+      {% for p in exchanges_pg.iter_pages() %}
+        {% if p %}
+          <a href="{{ url_for('admin.exchanges', page=p, status=status) }}"
+             class="page-btn {{ 'active' if p == exchanges_pg.page }}">{{ p }}</a>
+        {% else %}<span class="page-btn disabled">…</span>{% endif %}
+      {% endfor %}
+      <a href="{{ url_for('admin.exchanges', page=exchanges_pg.next_num, status=status) }}"
+         class="page-btn {{ 'disabled' if not exchanges_pg.has_next }}"><i class="fas fa-chevron-right"></i></a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

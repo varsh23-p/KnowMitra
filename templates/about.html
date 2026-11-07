@@ -1,0 +1,716 @@
+{% extends "base_public.html" %}
+{% block title %}About{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ══ About page — page-scoped styles ═══════════════════════════ */
+
+/* ── Page hero (reuses existing .landing-nav + grad vars) ─────── */
+.about-hero {
+  padding: 9rem 2.5rem 5rem;
+  background: var(--grad-hero);
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+.about-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 60% 50%,
+    rgba(121,87,255,.22) 0%, transparent 65%);
+  pointer-events: none;
+}
+/* decorative circles */
+.about-hero .deco-1,
+.about-hero .deco-2 {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: .22;
+  pointer-events: none;
+}
+.about-hero .deco-1 {
+  width: 420px; height: 420px;
+  background: var(--purple);
+  top: -120px; right: -80px;
+  animation: float 9s ease-in-out infinite;
+}
+.about-hero .deco-2 {
+  width: 300px; height: 300px;
+  background: var(--orange);
+  bottom: -80px; left: -60px;
+  animation: float 11s ease-in-out infinite reverse;
+  opacity: .15;
+}
+.about-hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.about-hero h1 {
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.2;
+  margin-bottom: 1.25rem;
+}
+.about-hero h1 span {
+  background: linear-gradient(90deg, var(--yellow), var(--orange));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.about-hero p {
+  font-size: 1.1rem;
+  color: rgba(255,255,255,.72);
+  line-height: 1.8;
+  max-width: 620px;
+  margin: 0 auto 1.5rem;
+}
+
+/* ── Breadcrumb strip ────────────────────────────────────────── */
+.about-breadcrumb {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-light);
+  padding: .75rem 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+.about-breadcrumb a { color: var(--primary); }
+.about-breadcrumb a:hover { text-decoration: underline; }
+.about-breadcrumb .sep { opacity: .4; }
+
+/* ── Mission banner ──────────────────────────────────────────── */
+.mission-banner {
+  background: var(--grad-primary);
+  border-radius: var(--radius-lg);
+  padding: 3rem 2.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.mission-banner::after {
+  content: '';
+  position: absolute;
+  right: -60px; top: -60px;
+  width: 260px; height: 260px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.07);
+}
+.mission-banner h2 { color: #fff; font-size: clamp(1.6rem,3vw,2rem); margin-bottom: 1rem; }
+.mission-banner p  { color: rgba(255,255,255,.78); font-size: 1.05rem; line-height: 1.8; max-width: 680px; margin: 0 auto; position: relative; z-index:1; }
+.mission-icon-wrap {
+  width: 72px; height: 72px;
+  background: rgba(255,255,255,.15);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.5rem;
+  font-size: 1.8rem;
+  color: #fff;
+  position: relative; z-index: 1;
+}
+
+/* ── Feature grid cards (reuse .feature-card from main.css) ─── */
+.about-feature-icon {
+  width: 62px; height: 62px;
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.1rem;
+  font-size: 1.5rem;
+  transition: var(--t-bounce);
+}
+.feature-card:hover .about-feature-icon {
+  transform: scale(1.12) rotate(-6deg);
+}
+
+/* ── Creator card ─────────────────────────────────────────────── */
+.creator-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.creator-banner {
+  height: 160px;
+  background: var(--grad-primary);
+  position: relative;
+}
+.creator-banner::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+}
+.creator-avatar-wrap {
+  position: absolute;
+  bottom: -50px; left: 2rem;
+}
+.creator-avatar {
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  background: var(--grad-primary);
+  border: 5px solid #fff;
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.6rem;
+  font-weight: 900;
+  color: #fff;
+  user-select: none;
+}
+.creator-body {
+  padding: 4.5rem 2rem 2rem;
+}
+.creator-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: .2rem;
+}
+.creator-tagline {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: .95rem;
+  margin-bottom: .75rem;
+}
+.creator-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem 1.5rem;
+  color: var(--text-muted);
+  font-size: .88rem;
+  margin-bottom: 1.5rem;
+}
+.creator-meta-row span { display: flex; align-items: center; gap: .4rem; }
+
+/* Creator info grid */
+.creator-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+.creator-info-box {
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 1.35rem 1.5rem;
+}
+.creator-info-box h4 {
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--primary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+}
+.edu-item {
+  padding: .75rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.edu-item:last-child { border-bottom: none; }
+.edu-degree { font-weight: 700; font-size: .9rem; }
+.edu-place  { font-size: .82rem; color: var(--text-secondary); margin-top: .15rem; }
+.edu-year   { font-size: .76rem; color: var(--text-muted); margin-top: .1rem; display: flex; align-items: center; gap: .3rem; }
+
+/* Skill tag groups */
+.skill-group { margin-bottom: 1rem; }
+.skill-group-label {
+  font-size: .76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-muted);
+  margin-bottom: .5rem;
+}
+.skill-tags-wrap { display: flex; flex-wrap: wrap; gap: .4rem; }
+.about-skill-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .28rem .75rem;
+  border-radius: 99px;
+  font-size: .78rem;
+  font-weight: 600;
+  background: var(--primary-light);
+  color: var(--purple-darker);
+  border: 1.5px solid rgba(121,87,255,.2);
+  transition: var(--t-fast);
+  cursor: default;
+}
+.about-skill-tag:hover { background: var(--primary); color: #fff; transform: translateY(-1px); }
+.about-skill-tag.green   { background: var(--success-light); color: #166534; border-color: rgba(34,197,94,.2); }
+.about-skill-tag.green:hover { background: var(--success); color: #fff; }
+.about-skill-tag.blue    { background: var(--info-light); color: #0c4a6e; border-color: rgba(14,165,233,.2); }
+.about-skill-tag.blue:hover  { background: var(--info); color: #fff; }
+.about-skill-tag.orange  { background: var(--secondary-light); color: var(--orange-dark); border-color: rgba(255,121,92,.2); }
+.about-skill-tag.orange:hover { background: var(--secondary); color: #fff; }
+.about-interest-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .35rem .9rem;
+  border-radius: 99px;
+  font-size: .82rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--primary);
+  border: 1.5px solid var(--primary-light);
+  transition: var(--t-fast);
+}
+.about-interest-tag:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* GitHub button */
+.github-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .65rem 1.4rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: .92rem;
+  background: var(--navy-dark);
+  color: #fff;
+  border: 1.5px solid rgba(255,255,255,.15);
+  text-decoration: none;
+  transition: var(--t-bounce);
+}
+.github-btn:hover { background: var(--navy); transform: translateY(-2px); box-shadow: 0 6px 22px rgba(121,87,255,.3); color: #fff; }
+.github-btn i { font-size: 1.05rem; }
+
+/* ── Project card ─────────────────────────────────────────────── */
+.project-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.project-card-header {
+  background: var(--grad-primary);
+  padding: 2rem 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+.project-card-icon {
+  width: 64px; height: 64px;
+  border-radius: var(--radius);
+  background: rgba(255,255,255,.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+.project-card-header h2 { color: #fff; margin: 0; font-size: 1.5rem; }
+.project-card-header p  { color: rgba(255,255,255,.72); margin: .2rem 0 0; font-size: .9rem; }
+.project-card-body { padding: 2rem 2.5rem; }
+
+/* Tech stack pills */
+.tech-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .45rem 1.1rem;
+  border-radius: 99px;
+  font-size: .85rem;
+  font-weight: 700;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  color: var(--text-secondary);
+  transition: var(--t-fast);
+}
+.tech-pill:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-lighter); }
+.tech-pill i { font-size: .9rem; }
+
+/* ── CTA strip (reuses .cta-section class from main.css) ─────── */
+
+/* ── Responsive tweaks ───────────────────────────────────────── */
+@media (max-width: 900px) {
+  .creator-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .about-hero { padding: 8rem 1.25rem 3.5rem; }
+  .creator-body { padding: 4rem 1.25rem 1.5rem; }
+  .project-card-body { padding: 1.5rem 1.25rem; }
+  .project-card-header { flex-direction: column; text-align: center; padding: 1.75rem 1.25rem; }
+  .mission-banner { padding: 2.5rem 1.25rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══ Navbar (identical to index.html) ══════════════════════════ -->
+<nav class="landing-nav" id="landingNav">
+  <div class="nav-logo">
+    <div class="nav-logo-icon"><i class="fas fa-seedling"></i></div>
+    <span class="nav-logo-text">Know<span>Mitra</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="{{ url_for('main.index') }}"   class="nav-link">Home</a>
+    <a href="{{ url_for('main.index') }}#features"     class="nav-link">Features</a>
+    <a href="{{ url_for('main.index') }}#how-it-works" class="nav-link">How It Works</a>
+    <a href="{{ url_for('main.about') }}"   class="nav-link" style="color:#fff;font-weight:700;">About</a>
+  </div>
+  <div class="nav-actions">
+    <a href="{{ url_for('auth.login') }}"    class="btn btn-outline-white btn-sm">Sign In</a>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-secondary btn-sm">Get Started Free</a>
+  </div>
+</nav>
+
+<!-- ══ Hero ══════════════════════════════════════════════════════ -->
+<section class="about-hero">
+  <div class="deco-1"></div>
+  <div class="deco-2"></div>
+  <div class="about-hero-inner">
+    <div class="hero-badge" style="justify-content:center;margin-bottom:1.25rem;">
+      <span class="hero-badge-dot"></span>
+      <span class="hero-badge-text">Student Skill Exchange Platform</span>
+    </div>
+    <h1>About <span>KnowMitra</span></h1>
+    <p>
+      KnowMitra is a campus peer learning platform designed to connect students
+      who want to share their knowledge and learn new skills from each other.
+      Our platform encourages collaborative learning by allowing students to teach
+      skills they already know and learn skills they are interested in —
+      <strong style="color:rgba(255,255,255,.9);">without paying money.</strong>
+    </p>
+    <div style="display:flex;gap:.85rem;justify-content:center;flex-wrap:wrap;">
+      <a href="{{ url_for('auth.register') }}" class="btn btn-secondary btn-lg">
+        <i class="fas fa-rocket"></i> Join KnowMitra Free
+      </a>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-outline-white btn-lg">
+        <i class="fas fa-sign-in-alt"></i> Sign In
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Breadcrumb -->
+<div class="about-breadcrumb">
+  <a href="{{ url_for('main.index') }}">Home</a>
+  <span class="sep"><i class="fas fa-chevron-right" style="font-size:.65rem;"></i></span>
+  <span>About</span>
+</div>
+
+<!-- ══ Section 2: Mission ════════════════════════════════════════ -->
+<section class="section section-alt">
+  <div class="mission-banner fade-in-up">
+    <div class="mission-icon-wrap">
+      <i class="fas fa-bullseye"></i>
+    </div>
+    <h2>Our Mission</h2>
+    <p>
+      Our mission is to make learning <strong style="color:rgba(255,255,255,.95);">accessible, collaborative and affordable</strong>
+      by creating a community where every student has something valuable to teach
+      and something new to learn. We believe peer-to-peer knowledge exchange is the
+      future of student education.
+    </p>
+  </div>
+</section>
+
+<!-- ══ Section 3: How KnowMitra Helps Students ══════════════════ -->
+<section class="section">
+  <div class="section-header fade-in-up">
+    <div class="section-eyebrow"><i class="fas fa-seedling"></i> Benefits</div>
+    <h2 class="section-title">How KnowMitra <span class="text-gradient">Helps Students</span></h2>
+    <p class="section-subtitle">
+      Everything you need to grow, connect and learn — all in one free platform.
+    </p>
+  </div>
+
+  <div class="grid-3" style="max-width:1100px;margin:0 auto;">
+
+    {% set help_cards = [
+      ('fa-share-alt',       'purple',  'Share Your Skills',
+       'Teach what you already know. Every student has expertise worth sharing — from programming to painting to public speaking.'),
+      ('fa-compass',         'blue',    'Discover New Skills',
+       'Browse hundreds of skills across programming, music, languages, design, and more. Find exactly what you want to learn.'),
+      ('fa-user-friends',    'green',   'Connect With Students',
+       'Build meaningful connections with peers from colleges across India. Expand your network while expanding your knowledge.'),
+      ('fa-exchange-alt',    'orange',  'Exchange Knowledge',
+       'Our smart matching engine pairs you with the perfect partner — someone who teaches what you want to learn and vice versa.'),
+      ('fa-chart-line',      'cyan',    'Track Learning Progress',
+       'Monitor your active exchanges, completed swaps, and collected reviews on your personal dashboard with live analytics.'),
+      ('fa-network-wired',   'purple',  'Build Your Network',
+       'Every exchange builds a real connection. Your growing network of peers becomes your most valuable professional asset.'),
+    ] %}
+
+    {% for icon, color, title, desc in help_cards %}
+    <div class="feature-card fade-in-up">
+      <div class="about-feature-icon"
+           style="background:var(--{{ color }}-light, var(--primary-light));
+                  color:var(--{{ color }}, var(--primary));">
+        <i class="fas {{ icon }}"></i>
+      </div>
+      <h3 style="margin-bottom:.6rem;">{{ title }}</h3>
+      <p style="font-size:.9rem;">{{ desc }}</p>
+    </div>
+    {% endfor %}
+
+  </div>
+</section>
+
+<!-- ══ Section 4: Meet the Creator ══════════════════════════════ -->
+<section class="section section-alt">
+  <div class="section-header fade-in-up">
+    <div class="section-eyebrow"><i class="fas fa-user-astronaut"></i> Creator</div>
+    <h2 class="section-title">Meet the <span class="text-gradient">Creator</span></h2>
+    <p class="section-subtitle">The person who designed, built and deployed KnowMitra from the ground up.</p>
+  </div>
+
+  <div class="creator-card fade-in-up">
+
+    <!-- Banner + avatar -->
+    <div class="creator-banner">
+      <div class="creator-avatar-wrap">
+        <div class="creator-avatar">VP</div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="creator-body">
+
+      <!-- Name + tagline + actions row -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1.25rem;margin-bottom:1.5rem;">
+        <div>
+          <div class="creator-name">Varsha Patil</div>
+          <div class="creator-tagline">
+            <i class="fas fa-code" style="margin-right:.35rem;"></i>
+            B.Tech IT Student · Full-Stack Developer
+          </div>
+          <div class="creator-meta-row">
+            <span><i class="fas fa-university"></i> MPSTME, NMIMS University</span>
+            <span><i class="fas fa-map-marker-alt"></i> Shirpur, Maharashtra</span>
+            <span><i class="fas fa-calendar-alt"></i> 2023 – 2027</span>
+          </div>
+          <!-- Areas of Interest tags -->
+          <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+            {% for interest, icon in [
+              ('Web Development',    'fa-globe'),
+              ('Software Development','fa-laptop-code'),
+              ('Backend Development','fa-server'),
+              ('Data Analytics',     'fa-chart-bar'),
+              ('Database Management','fa-database'),
+            ] %}
+            <span class="about-interest-tag">
+              <i class="fas {{ icon }}" style="font-size:.78rem;"></i>
+              {{ interest }}
+            </span>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- GitHub link -->
+        <a href="https://github.com/varsh23-p"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="github-btn">
+          <i class="fab fa-github"></i>
+          View GitHub Profile
+          <i class="fas fa-external-link-alt" style="font-size:.72rem;opacity:.6;"></i>
+        </a>
+      </div>
+
+      <!-- Info grid: Education + Technical Skills -->
+      <div class="creator-grid">
+
+        <!-- Education -->
+        <div class="creator-info-box">
+          <h4><i class="fas fa-graduation-cap"></i> Education</h4>
+
+          <div class="edu-item">
+            <div class="edu-degree">B.Tech – Information Technology</div>
+            <div class="edu-place">MPSTME, NMIMS University, Shirpur</div>
+            <div class="edu-year"><i class="fas fa-clock"></i> 2023 – 2027</div>
+          </div>
+
+          <div class="edu-item">
+            <div class="edu-degree">Diploma – Computer Engineering</div>
+            <div class="edu-place">R. C. Patel Polytechnic, Shirpur</div>
+            <div class="edu-year"><i class="fas fa-clock"></i> 2021 – 2024</div>
+          </div>
+        </div>
+
+        <!-- Technical Skills -->
+        <div class="creator-info-box">
+          <h4><i class="fas fa-code"></i> Technical Skills</h4>
+
+          <div class="skill-group">
+            <div class="skill-group-label">Programming</div>
+            <div class="skill-tags-wrap">
+              {% for lang in ['Java', 'Python', 'C++'] %}
+                <span class="about-skill-tag"><i class="fas fa-code" style="font-size:.72rem;"></i> {{ lang }}</span>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="skill-group">
+            <div class="skill-group-label">Web Development</div>
+            <div class="skill-tags-wrap">
+              {% for tech in ['HTML', 'CSS', 'JavaScript', 'PHP'] %}
+                <span class="about-skill-tag blue"><i class="fas fa-globe" style="font-size:.72rem;"></i> {{ tech }}</span>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="skill-group">
+            <div class="skill-group-label">Database</div>
+            <div class="skill-tags-wrap">
+              {% for db_name in ['MySQL', 'SQLite', 'Firebase'] %}
+                <span class="about-skill-tag green"><i class="fas fa-database" style="font-size:.72rem;"></i> {{ db_name }}</span>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="skill-group">
+            <div class="skill-group-label">Data Analytics</div>
+            <div class="skill-tags-wrap">
+              {% for tool in ['Power BI', 'SQL', 'Pandas', 'NumPy'] %}
+                <span class="about-skill-tag orange"><i class="fas fa-chart-bar" style="font-size:.72rem;"></i> {{ tool }}</span>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="skill-group" style="margin-bottom:0;">
+            <div class="skill-group-label">Tools</div>
+            <div class="skill-tags-wrap">
+              {% for t in ['Git', 'GitHub', 'Android Studio', 'VS Code'] %}
+                <span class="about-skill-tag"><i class="fas fa-tools" style="font-size:.72rem;"></i> {{ t }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /creator-grid -->
+    </div><!-- /creator-body -->
+  </div><!-- /creator-card -->
+</section>
+
+<!-- ══ Section 5: Project Information ═══════════════════════════ -->
+<section class="section">
+  <div class="section-header fade-in-up">
+    <div class="section-eyebrow"><i class="fas fa-layer-group"></i> Project</div>
+    <h2 class="section-title">Project <span class="text-gradient">Information</span></h2>
+  </div>
+
+  <div class="project-card fade-in-up">
+    <!-- Card header -->
+    <div class="project-card-header">
+      <div class="project-card-icon"><i class="fas fa-seedling"></i></div>
+      <div>
+        <h2>KnowMitra – Campus Peer Learning Platform</h2>
+        <p>A full-stack web application for peer-to-peer skill exchange among college students</p>
+      </div>
+    </div>
+
+    <!-- Card body -->
+    <div class="project-card-body">
+      <div class="grid-2" style="gap:2rem;">
+
+        <!-- Objective -->
+        <div>
+          <div class="section-title-sm"><i class="fas fa-bullseye"></i> Project Objective</div>
+          <p style="font-size:.93rem;line-height:1.8;color:var(--text-secondary);">
+            To develop a platform where students can exchange knowledge, connect with
+            other learners and improve their technical and non-technical skills through
+            peer-to-peer learning — completely free of charge.
+          </p>
+
+          <!-- Key highlights -->
+          <div style="margin-top:1.25rem;display:flex;flex-direction:column;gap:.6rem;">
+            {% for point in [
+              ('fa-check-circle', 'success', 'Smart skill-matching algorithm (100% / 50% scores)'),
+              ('fa-check-circle', 'success', 'Complete exchange request state machine'),
+              ('fa-check-circle', 'success', 'Real-time AJAX messaging with IST timestamps'),
+              ('fa-check-circle', 'success', 'Ratings, reviews & live analytics dashboard'),
+              ('fa-check-circle', 'success', 'Secure admin panel with role-based access'),
+              ('fa-check-circle', 'success', '354 automated tests — all passing'),
+            ] %}
+            <div style="display:flex;align-items:center;gap:.65rem;font-size:.88rem;color:var(--text-secondary);">
+              <i class="fas {{ point[0] }}" style="color:var(--{{ point[1] }});flex-shrink:0;"></i>
+              {{ point[2] }}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Tech stack -->
+        <div>
+          <div class="section-title-sm"><i class="fas fa-layer-group"></i> Technology Stack</div>
+          <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:1.5rem;">
+            {% for tech, icon, color in [
+              ('Python',     'fa-python',         '#3776ab'),
+              ('Flask',      'fa-flask',          '#6c47ff'),
+              ('HTML5',      'fa-html5',          '#e34f26'),
+              ('CSS3',       'fa-css3-alt',       '#264de4'),
+              ('JavaScript', 'fa-js',             '#f7df1e'),
+              ('SQLite',     'fa-database',       '#003b57'),
+            ] %}
+            <span class="tech-pill">
+              <i class="fab {{ icon }}" style="color:{{ color }};"></i>
+              {{ tech }}
+            </span>
+            {% endfor %}
+          </div>
+
+          <!-- Additional tools row -->
+          <div class="section-title-sm" style="margin-top:.5rem;"><i class="fas fa-tools"></i> Libraries & Tools</div>
+          <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+            {% for tool in ['Flask-Login', 'Flask-SQLAlchemy', 'Werkzeug', 'Chart.js', 'Font Awesome', 'pytest'] %}
+            <span style="background:var(--bg);border:1.5px solid var(--border-light);border-radius:99px;padding:.28rem .75rem;font-size:.78rem;font-weight:600;color:var(--text-secondary);">
+              {{ tool }}
+            </span>
+            {% endfor %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA ════════════════════════════════════════════════════════ -->
+<section class="cta-section">
+  <div class="cta-inner fade-in-up">
+    <div class="section-eyebrow" style="justify-content:center;">
+      <i class="fas fa-rocket"></i> Ready to Start?
+    </div>
+    <h2 class="cta-title">Join KnowMitra Today</h2>
+    <p class="cta-sub">Create a free account and start exchanging skills with students across the country.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a href="{{ url_for('auth.register') }}" class="btn btn-secondary btn-xl">
+        <i class="fas fa-user-plus"></i> Create Free Account
+      </a>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-outline-white btn-xl">
+        <i class="fas fa-sign-in-alt"></i> Sign In
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ Footer (identical to index.html) ═════════════════════════ -->
+<footer class="landing-footer">
+  <div style="display:flex;align-items:center;justify-content:center;gap:.6rem;margin-bottom:.75rem;">
+    <div style="width:30px;height:30px;background:var(--grad-primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;">
+      <i class="fas fa-seedling"></i>
+    </div>
+    <span style="font-size:1rem;font-weight:700;color:rgba(255,255,255,.6);">KnowMitra</span>
+  </div>
+  <p style="color:rgba(255,255,255,.35);font-size:.85rem;">© 2026 KnowMitra – Campus Peer Learning Platform. Built with <i class="fas fa-heart" style="color:var(--orange);"></i> for students.</p>
+  <p style="font-size:.78rem;color:rgba(255,255,255,.2);margin-top:.35rem;"><em>Learn Together. Grow Together.</em></p>
+</footer>
+
+{% endblock %}

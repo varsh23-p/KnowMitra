@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Admin – Skills{% endblock %}
+{% block page_title %}Manage Skills{% endblock %}
+
+{% block content %}
+<div class="page-header flex-between">
+  <div><h1>Platform Skills</h1><p>{{ skills|length }} skills in the library</p></div>
+  <a href="{{ url_for('admin.index') }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Skill</th><th>Category</th><th>Teachers</th><th>Learners</th><th>Added</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for skill in skills %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:.5rem;">
+              <i class="fas {{ skill.icon }}" style="color:var(--primary);width:18px;"></i>
+              <strong>{{ skill.name }}</strong>
+            </div>
+            {% if skill.description %}<div style="font-size:.78rem;color:var(--text-muted);">{{ skill.description[:60] }}</div>{% endif %}
+          </td>
+          <td><span class="badge badge-primary">{{ skill.category }}</span></td>
+          <td>{{ skill.teachers.count() }}</td>
+          <td>{{ skill.learners.count() }}</td>
+          <td style="font-size:.82rem;color:var(--text-muted);">{{ skill.created_at.strftime('%b %d, %Y') }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('admin.delete_skill', skill_id=skill.id) }}" style="display:inline;">
+              <button type="submit" class="btn btn-sm btn-danger"
+                      data-confirm="Delete skill '{{ skill.name }}'? This cannot be undone.">
+                <i class="fas fa-trash"></i> Delete
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

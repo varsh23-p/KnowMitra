@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Reported Users{% endblock %}
+{% block page_title %}Reported Users{% endblock %}
+
+{% block content %}
+<div class="page-header flex-between">
+  <div><h1>Reported Users</h1><p>Review and action flagged accounts</p></div>
+  <a href="{{ url_for('admin.index') }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+{% if reported_users %}
+  <div style="display:flex;flex-direction:column;gap:.75rem;">
+    {% for u in reported_users %}
+    <div class="request-row">
+      <div class="avatar avatar-sm avatar-placeholder" style="background:linear-gradient(135deg,var(--danger),var(--warning));color:#fff;font-weight:700;">
+        {{ u.full_name[0].upper() }}
+      </div>
+      <div class="request-meta">
+        <div style="font-weight:700;">{{ u.full_name }}</div>
+        <div style="font-size:.82rem;color:var(--text-muted);">{{ u.email }} · {{ u.college or 'No college' }}</div>
+        <div style="font-size:.78rem;margin-top:.25rem;">Joined {{ u.created_at.strftime('%b %d, %Y') }}</div>
+      </div>
+      <div class="request-actions">
+        <a href="{{ url_for('profile.view', user_id=u.id) }}" class="btn btn-sm btn-ghost">View Profile</a>
+        <form method="POST" action="{{ url_for('admin.toggle_user', user_id=u.id) }}" style="display:inline;">
+          <button type="submit" class="btn btn-sm btn-danger"
+                  data-confirm="Deactivate {{ u.full_name }}?">Deactivate</button>
+        </form>
+        <form method="POST" action="{{ url_for('admin.clear_report', user_id=u.id) }}" style="display:inline;">
+          <button type="submit" class="btn btn-sm btn-success">Clear Report</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="fas fa-shield-alt"></i></div>
+    <h3>No reported users</h3>
+    <p>The platform is clean. No flagged accounts to review.</p>
+  </div>
+{% endif %}
+{% endblock %}

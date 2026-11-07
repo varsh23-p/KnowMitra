@@ -1,0 +1,253 @@
+{% extends "base_public.html" %}
+{% block title %}Admin Login{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Admin login page ─────────────────────────────────────────── */
+.admin-login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0917 0%, #17152F 50%, #100e22 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background shapes */
+.admin-login-page::before {
+  content: '';
+  position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(121,87,255,.18) 0%, transparent 70%);
+  top: -150px; right: -100px;
+  pointer-events: none;
+}
+.admin-login-page::after {
+  content: '';
+  position: absolute;
+  width: 350px; height: 350px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,121,92,.1) 0%, transparent 70%);
+  bottom: -100px; left: -80px;
+  pointer-events: none;
+}
+
+.admin-login-card {
+  background: rgba(255,255,255,.035);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: var(--radius-xl);
+  padding: 2.75rem 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 24px 80px rgba(0,0,0,.5);
+  position: relative;
+  z-index: 1;
+}
+
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  background: rgba(239,68,68,.15);
+  border: 1px solid rgba(239,68,68,.3);
+  border-radius: 99px;
+  padding: .3rem .9rem;
+  font-size: .75rem;
+  font-weight: 700;
+  color: #fca5a5;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+.admin-badge i { font-size: .7rem; }
+
+.admin-logo {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  margin-bottom: 2rem;
+}
+.admin-logo-icon {
+  width: 48px; height: 48px;
+  background: var(--grad-primary);
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-size: 1.2rem;
+  box-shadow: 0 6px 20px rgba(121,87,255,.4);
+  flex-shrink: 0;
+}
+.admin-logo-text { font-size: 1.3rem; font-weight: 800; color: #fff; }
+.admin-logo-text span { color: var(--yellow); }
+
+.admin-login-title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: .3rem;
+}
+.admin-login-sub {
+  font-size: .88rem;
+  color: rgba(255,255,255,.45);
+  margin-bottom: 1.75rem;
+}
+
+/* Override form controls for dark background */
+.admin-login-card .form-label { color: rgba(255,255,255,.75); font-size: .85rem; }
+.admin-login-card .form-control {
+  background: rgba(255,255,255,.07);
+  border-color: rgba(255,255,255,.12);
+  color: #fff;
+}
+.admin-login-card .form-control::placeholder { color: rgba(255,255,255,.3); }
+.admin-login-card .form-control:focus {
+  background: rgba(255,255,255,.1);
+  border-color: var(--primary);
+  color: #fff;
+}
+.admin-login-card .input-icon { color: rgba(255,255,255,.35); }
+.admin-login-card .pw-toggle  { color: rgba(255,255,255,.35); }
+.admin-login-card .pw-toggle:hover { color: rgba(255,255,255,.7); }
+
+/* Alert overrides */
+.admin-login-card .alert {
+  background: rgba(239,68,68,.12);
+  border-color: rgba(239,68,68,.35);
+  color: #fca5a5;
+  font-size: .88rem;
+}
+.admin-login-card .alert-success {
+  background: rgba(16,185,129,.12);
+  border-color: rgba(16,185,129,.3);
+  color: #6ee7b7;
+}
+.admin-login-card .alert-warning {
+  background: rgba(245,158,11,.12);
+  border-color: rgba(245,158,11,.3);
+  color: #fcd34d;
+}
+
+.admin-divider {
+  height: 1px;
+  background: rgba(255,255,255,.08);
+  margin: 1.5rem 0;
+}
+.admin-back-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  font-size: .83rem;
+  color: rgba(255,255,255,.35);
+  text-decoration: none;
+  margin-top: 1.25rem;
+  transition: var(--t-fast);
+}
+.admin-back-link:hover { color: rgba(255,255,255,.65); }
+
+/* Security note */
+.security-note {
+  background: rgba(245,158,11,.07);
+  border: 1px solid rgba(245,158,11,.2);
+  border-radius: var(--radius-sm);
+  padding: .75rem 1rem;
+  font-size: .78rem;
+  color: rgba(255,255,255,.45);
+  display: flex;
+  align-items: flex-start;
+  gap: .55rem;
+  margin-top: 1.25rem;
+}
+.security-note i { color: rgba(245,158,11,.7); flex-shrink: 0; margin-top: .1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-login-page">
+  <div class="admin-login-card">
+
+    <!-- Logo -->
+    <div class="admin-logo">
+      <div class="admin-logo-icon"><i class="fas fa-seedling"></i></div>
+      <div class="admin-logo-text">Know<span>Mitra</span></div>
+    </div>
+
+    <!-- Admin badge -->
+    <div class="admin-badge">
+      <i class="fas fa-shield-alt"></i> Administrator Portal
+    </div>
+
+    <div class="admin-login-title">Admin Sign In</div>
+    <div class="admin-login-sub">Restricted to authorised administrators only</div>
+
+    <!-- Flash alerts -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+      <div class="alert alert-{{ 'danger' if cat in ['error','danger'] else cat if cat in ['success','warning','info'] else 'info' }}">
+        <i class="fas {% if cat=='success' %}fa-check-circle{% elif cat in ['danger','error'] %}fa-times-circle{% elif cat=='warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+        {{ msg }}
+      </div>
+      {% endfor %}
+    {% endwith %}
+
+    <!-- Login form -->
+    <form method="POST" action="{{ url_for('admin.login') }}" novalidate>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Admin Email</label>
+        <div class="input-icon-wrap">
+          <input type="email" id="email" name="email" class="form-control"
+                 placeholder="admin@knowmitra.app"
+                 value="{{ email or '' }}"
+                 required autofocus />
+          <i class="fas fa-envelope input-icon"></i>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <div class="pw-wrap input-icon-wrap">
+          <input type="password" id="password" name="password" class="form-control"
+                 placeholder="Enter admin password"
+                 required
+                 style="padding-left:2.75rem;padding-right:3rem;" />
+          <i class="fas fa-lock input-icon"></i>
+          <button type="button" class="pw-toggle" aria-label="Show password">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg"
+              style="margin-top:.5rem;font-size:.95rem;">
+        <i class="fas fa-shield-alt"></i> Sign In as Administrator
+      </button>
+    </form>
+
+    <div class="admin-divider"></div>
+
+    <!-- Security note -->
+    <div class="security-note">
+      <i class="fas fa-exclamation-triangle"></i>
+      <span>
+        This portal is for platform administrators only.
+        Admin accounts can only be created via the
+        <code style="background:rgba(255,255,255,.08);padding:.1rem .35rem;border-radius:4px;">flask create-admin</code>
+        CLI command.
+      </span>
+    </div>
+
+    <!-- Back link -->
+    <a href="{{ url_for('main.index') }}" class="admin-back-link">
+      <i class="fas fa-arrow-left" style="font-size:.75rem;"></i>
+      Back to KnowMitra home
+    </a>
+
+  </div>
+</div>
+{% endblock %}
