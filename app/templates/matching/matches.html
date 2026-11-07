@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}Find Matches{% endblock %}
+{% block page_title %}Smart Matching{% endblock %}
+
+{% block extra_css %}
+<style>
+.match-hero {
+  background: var(--grad-primary);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.75rem;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.match-hero::after {
+  content: '';
+  position: absolute; right: -50px; top: -50px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.07);
+}
+.match-hero h2 { color: #fff; font-size: 1.4rem; margin-bottom: .3rem; }
+.match-hero p  { color: rgba(255,255,255,.7); font-size: .88rem; }
+.match-stats { display:flex; gap:.85rem; position:relative; z-index:1; }
+.match-stat { text-align:center; background:rgba(255,255,255,.1); border-radius:var(--radius-sm); padding:.65rem 1.1rem; min-width:70px; }
+.match-stat-num { font-size:1.4rem; font-weight:800; color:#fff; }
+.match-stat-lbl { font-size:.72rem; color:rgba(255,255,255,.65); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ──────────────────────────────────────────────────── -->
+<div class="match-hero">
+  <div style="position:relative;z-index:1;">
+    <h2><i class="fas fa-magic" style="margin-right:.5rem;opacity:.8;"></i>Smart Skill Matching</h2>
+    <p>Students whose skills align with yours — ranked by match percentage</p>
+  </div>
+  <div class="match-stats">
+    <div class="match-stat">
+      <div class="match-stat-num">{{ results|length }}</div>
+      <div class="match-stat-lbl">Matches</div>
+    </div>
+    {% if results %}
+    <div class="match-stat">
+      <div class="match-stat-num">{{ results|selectattr('score','equalto',100)|list|length }}</div>
+      <div class="match-stat-lbl">100% Match</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if no_skills %}
+  <!-- ── No skills state ─────────────────────────────────────── -->
+  <div class="empty-state" style="margin-top:1rem;">
+    <div class="empty-icon"><i class="fas fa-magic"></i></div>
+    <h3>Add skills to get matched</h3>
+    <p>You need at least one teaching or learning skill for the matching engine to find compatible students.</p>
+    <a href="{{ url_for('skills.manage') }}" class="btn btn-primary">
+      <i class="fas fa-cogs"></i> Add My Skills
+    </a>
+  </div>
+
+{% else %}
+
+<!-- ── Filter bar: search + score + category ──────────────────── -->
+<div class="card mb-3">
+  <div class="card-body" style="padding:1.1rem 1.25rem;">
+
+    <!-- Search input -->
+    <form method="GET" action="{{ url_for('matching.matches') }}" style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1rem;">
+      <div style="flex:1;min-width:200px;">
+        <label style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.35rem;">Search by name or college</label>
+        <div class="input-group">
+          <input type="text" name="q" class="form-control" placeholder="Type a student name or college…" value="{{ search_query }}" />
+          <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
+        </div>
+      </div>
+      {% if search_query or category or min_score %}
+      <div>
+        <a href="{{ url_for('matching.matches') }}" class="btn btn-light btn-sm">
+          <i class="fas fa-times"></i> Clear Filters
+        </a>
+      </div>
+      {% endif %}
+    </form>
+
+    <!-- Score filter pills -->
+    <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.85rem;">
+      <span style="font-weight:700;font-size:.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Min Score:</span>
+      {% for threshold in [0, 50, 100] %}
+        <a href="{{ url_for('matching.matches', min_score=threshold, category=category, q=search_query) }}"
+           class="filter-chip {{ 'active' if min_score == threshold }}"
+           style="padding:.35rem .85rem;border-radius:99px;font-size:.82rem;font-weight:600;border:1.5px solid {{ 'var(--primary)' if min_score == threshold else 'var(--border)' }};background:{{ 'var(--primary-light)' if min_score == threshold else 'var(--bg-card)' }};color:{{ 'var(--primary)' if min_score == threshold else 'var(--text-secondary)' }};transition:var(--t-fast);text-decoration:none;white-space:nowrap;">
+          {{ 'All Scores' if threshold == 0 else threshold ~'%+' }}
+        </a>
+      {% endfor %}
+    </div>
+
+    <!-- Category filter pills -->
+    <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
+      <span style="font-weight:700;font-size:.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Category:</span>
+      <a href="{{ url_for('matching.matches', min_score=min_score, q=search_query) }}"
+         class="filter-chip {{ 'active' if not category }}"
+         style="padding:.35rem .85rem;border-radius:99px;font-size:.78rem;font-weight:600;border:1.5px solid {{ 'var(--primary)' if not category else 'var(--border)' }};background:{{ 'var(--primary-light)' if not category else 'var(--bg-card)' }};color:{{ 'var(--primary)' if not category else 'var(--text-secondary)' }};transition:var(--t-fast);text-decoration:none;white-space:nowrap;">
+        <i class="fas fa-th"></i> All
+      </a>
+      {% for cat, icon in categories %}
+        <a href="{{ url_for('matching.matches', category=cat, min_score=min_score, q=search_query) }}"
+           class="filter-chip {{ 'active' if category == cat }}"
+           style="padding:.35rem .85rem;border-radius:99px;font-size:.78rem;font-weight:600;border:1.5px solid {{ 'var(--primary)' if category == cat else 'var(--border)' }};background:{{ 'var(--primary-light)' if category == cat else 'var(--bg-card)' }};color:{{ 'var(--primary)' if category == cat else 'var(--text-secondary)' }};transition:var(--t-fast);text-decoration:none;white-space:nowrap;">
+          <i class="fas {{ icon }}"></i> {{ cat }}
+        </a>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Results ───────────────────────────────────────────────── -->
+{% if results %}
+
+<!-- Results count -->
+<div style="margin-bottom:1rem;font-size:.88rem;color:var(--text-muted);">
+  Showing <strong style="color:var(--text-primary);">{{ results|length }}</strong> match{{ 'es' if results|length != 1 }}
+  {% if search_query %} for "<em>{{ search_query }}</em>"{% endif %}
+  {% if category %} in <strong>{{ category }}</strong>{% endif %}
+</div>
+
+<div style="display:flex;flex-direction:column;gap:1rem;">
+  {% for m in results %}
+
+  <div class="match-card" style="border-left-color: {% if m.score == 100 %}var(--success){% elif m.score == 50 %}var(--warning){% else %}var(--danger){% endif %};">
+
+    <!-- Score ring -->
+    <div class="score-ring" style="--pct:{{ m.score }}%;background:conic-gradient(
+      {% if m.score == 100 %}var(--success){% elif m.score == 50 %}var(--warning){% else %}var(--danger){% endif %}
+       var(--pct, 0%), var(--border) 0%);">
+      <span style="color:{% if m.score == 100 %}var(--success){% elif m.score == 50 %}var(--warning){% else %}var(--danger){% endif %};">{{ m.score }}%</span>
+    </div>
+
+    <!-- Avatar -->
+    {% if m.user.profile_photo and m.user.profile_photo != 'default_avatar.png' %}
+      <img src="{{ url_for('static', filename='uploads/' + m.user.profile_photo) }}"
+           class="avatar avatar-md" alt="avatar"
+           data-initials="{{ m.user.full_name[0].upper() }}" />
+    {% else %}
+      <div class="avatar-placeholder avatar-md" style="background:linear-gradient(135deg,var(--primary),var(--secondary));font-weight:700;font-size:1.2rem;color:#fff;">
+        {{ m.user.full_name[0].upper() }}
+      </div>
+    {% endif %}
+
+    <div class="match-info">
+      <!-- Header row -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+        <div>
+          <div style="font-weight:700;font-size:1rem;">{{ m.user.full_name }}</div>
+          <div style="font-size:.82rem;color:var(--text-muted);">
+            {{ m.user.college or 'Student' }}
+            {% if m.user.year %} · {{ m.user.year }}{% endif %}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <!-- Match badge -->
+          <span class="badge {% if m.score == 100 %}badge-success{% elif m.score == 50 %}badge-warning{% else %}badge-danger{% endif %}" style="font-size:.72rem;">
+            {% if m.matched_directions == 2 %}Mutual Match{% elif m.matched_directions == 1 %}One-way Match{% endif %}
+          </span>
+          <!-- Rating -->
+          <div style="display:flex;gap:.1rem;">
+            {% for i in range(1,6) %}
+              <i class="fas fa-star" style="color:{% if i<=m.user.avg_rating|int %}#f59e0b{% else %}#e2dff5{% endif %};font-size:.85rem;"></i>
+            {% endfor %}
+            <span style="font-size:.78rem;color:var(--text-muted);margin-left:.2rem;">({{ m.user.avg_rating }})</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Match reasons -->
+      <div class="match-reasons">
+        {% for reason in m.reasons %}
+          <div class="match-reason">
+            <i class="fas fa-check-circle"
+               style="color:{% if m.score == 100 %}var(--success){% else %}var(--primary){% endif %};"></i>
+            {{ reason }}
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Matched skill tags -->
+      <div style="display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.6rem;">
+        {% for skill in m.can_teach_me %}
+          <span class="skill-tag skill-tag-teach" style="font-size:.75rem;" title="They can teach you this">
+            <i class="fas fa-chalkboard-teacher"></i> {{ skill.name }}
+            {% if skill.category %}<span style="opacity:.6;font-size:.68rem;margin-left:.2rem;">{{ skill.category }}</span>{% endif %}
+          </span>
+        {% endfor %}
+        {% for skill in m.you_teach_them %}
+          <span class="skill-tag skill-tag-learn" style="font-size:.75rem;" title="You can teach them this">
+            <i class="fas fa-graduation-cap"></i> {{ skill.name }}
+            {% if skill.category %}<span style="opacity:.6;font-size:.68rem;margin-left:.2rem;">{{ skill.category }}</span>{% endif %}
+          </span>
+        {% endfor %}
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap;">
+        <a href="{{ url_for('profile.view', user_id=m.user.id) }}" class="btn btn-sm btn-ghost">
+          <i class="fas fa-user"></i> View Profile
+        </a>
+        <a href="{{ url_for('exchanges.send', receiver_id=m.user.id) }}" class="btn btn-sm btn-primary">
+          <i class="fas fa-paper-plane"></i> Send Request
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  {% endfor %}
+</div>
+
+{% else %}
+  <!-- ── No results state ─────────────────────────────────────── -->
+  <div class="empty-state" style="margin-top:1rem;">
+    <div class="empty-icon"><i class="fas fa-search"></i></div>
+    <h3>No matches found</h3>
+    <p>No students match your current filters. Try adjusting your search, clearing the category filter, or adding more skills to your profile.</p>
+    <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
+      <a href="{{ url_for('skills.manage') }}" class="btn btn-primary">
+        <i class="fas fa-cogs"></i> Update Skills
+      </a>
+      <a href="{{ url_for('matching.matches') }}" class="btn btn-ghost">
+        <i class="fas fa-redo"></i> Reset Filters
+      </a>
+    </div>
+  </div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

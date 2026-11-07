@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile{% endblock %}
+{% block page_title %}Edit Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+.photo-upload-zone {
+  display: flex; flex-direction: column; align-items: center;
+  gap: .85rem; padding: 1.5rem;
+  background: var(--bg); border-radius: var(--radius);
+  border: 2px dashed var(--border); transition: var(--t);
+}
+.photo-upload-zone:hover { border-color: var(--primary); background: var(--primary-lighter); }
+.photo-upload-label {
+  cursor: pointer; font-size: .88rem; color: var(--primary); font-weight: 600;
+  display: flex; align-items: center; gap: .4rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:700px;">
+  <div class="breadcrumb mb-2">
+    <a href="{{ url_for('profile.view', user_id=current_user.id) }}">My Profile</a>
+    <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:.65rem;"></i></span>
+    <span>Edit</span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 style="margin:0;font-size:1.1rem;"><i class="fas fa-edit" style="color:var(--primary);margin-right:.4rem;"></i>Edit Your Profile</h3>
+        <div style="font-size:.8rem;color:var(--text-muted);margin-top:.15rem;">Update your information visible to other students</div>
+      </div>
+      <a href="{{ url_for('profile.view', user_id=current_user.id) }}" class="btn btn-light btn-sm">
+        <i class="fas fa-times"></i> Cancel
+      </a>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('profile.edit') }}" enctype="multipart/form-data">
+
+        <!-- Photo upload -->
+        <div class="form-group">
+          <label class="form-label">Profile Photo</label>
+          <div class="photo-upload-zone">
+            {% if current_user.profile_photo and current_user.profile_photo != 'default_avatar.png' %}
+              <img src="{{ url_for('static', filename='uploads/' + current_user.profile_photo) }}"
+                   class="avatar avatar-xl" style="border:4px solid var(--primary-light);" alt="avatar"/>
+            {% else %}
+              <div class="avatar-placeholder avatar-xl" style="border:4px solid var(--primary-light);">
+                {{ current_user.full_name[0].upper() }}
+              </div>
+            {% endif %}
+            <label class="photo-upload-label">
+              <i class="fas fa-camera"></i>
+              <span id="photoLabel">Click to change photo</span>
+              <input type="file" name="profile_photo" accept="image/*" style="display:none;"
+                     onchange="document.getElementById('photoLabel').textContent = this.files[0]?.name || 'Click to change photo'"/>
+            </label>
+            <span class="form-hint">PNG, JPG, WEBP, GIF — max 5 MB</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Name + Email -->
+        <div class="grid-2" style="gap:.85rem;">
+          <div class="form-group">
+            <label class="form-label" for="full_name">Full Name <span class="required">*</span></label>
+            <div class="input-icon-wrap">
+              <input type="text" id="full_name" name="full_name" class="form-control"
+                     value="{{ current_user.full_name }}" required/>
+              <i class="fas fa-user input-icon"></i>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <div class="input-icon-wrap">
+              <input type="email" class="form-control" value="{{ current_user.email }}" disabled/>
+              <i class="fas fa-envelope input-icon"></i>
+            </div>
+            <span class="form-hint"><i class="fas fa-lock"></i> Email cannot be changed</span>
+          </div>
+        </div>
+
+        <!-- College -->
+        <div class="form-group">
+          <label class="form-label" for="college">College / University</label>
+          <div class="input-icon-wrap">
+            <input type="text" id="college" name="college" class="form-control"
+                   placeholder="e.g. IIT Bombay" value="{{ current_user.college or '' }}"/>
+            <i class="fas fa-university input-icon"></i>
+          </div>
+        </div>
+
+        <!-- Branch + Year -->
+        <div class="grid-2" style="gap:.85rem;">
+          <div class="form-group">
+            <label class="form-label" for="branch">Branch / Department</label>
+            <div class="input-icon-wrap">
+              <input type="text" id="branch" name="branch" class="form-control"
+                     placeholder="e.g. Computer Science" value="{{ current_user.branch or '' }}"/>
+              <i class="fas fa-code-branch input-icon"></i>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="year">Current Year</label>
+            <select id="year" name="year" class="form-select">
+              <option value="">Select year</option>
+              {% for y in ['1st Year','2nd Year','3rd Year','4th Year','5th Year','Postgraduate'] %}
+                <option value="{{ y }}" {{ 'selected' if current_user.year == y }}>{{ y }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Experience -->
+        <div class="form-group">
+          <label class="form-label">Overall Experience Level</label>
+          <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+            {% for lvl in ['Beginner','Intermediate','Expert'] %}
+            <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;padding:.55rem 1rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);transition:var(--t-fast);font-size:.88rem;font-weight:600;"
+                   onmouseover="this.style.borderColor='var(--primary)'"
+                   onmouseout="if(!this.querySelector('input').checked)this.style.borderColor='var(--border)'">
+              <input type="radio" name="experience" value="{{ lvl }}" style="accent-color:var(--primary);"
+                     {{ 'checked' if current_user.experience == lvl }}
+                     onchange="document.querySelectorAll('.exp-label').forEach(l=>l.style.borderColor='var(--border)');this.closest('label').style.borderColor='var(--primary)'"/>
+              {{ lvl }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Bio -->
+        <div class="form-group">
+          <label class="form-label" for="bio">Bio</label>
+          <textarea id="bio" name="bio" class="form-control" rows="4"
+                    placeholder="Tell others about yourself, your interests, and what you're good at…"
+                    data-maxlength="500" data-count-target="bioCounter">{{ current_user.bio or '' }}</textarea>
+          <span class="form-hint" id="bioCounter">500 characters remaining</span>
+        </div>
+
+        <!-- Submit -->
+        <div style="display:flex;gap:.75rem;justify-content:flex-end;padding-top:.5rem;">
+          <a href="{{ url_for('profile.view', user_id=current_user.id) }}" class="btn btn-light">
+            Cancel
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Save Changes
+          </button>
+        </div>
+      </form>
+
+      <!-- Danger zone -->
+      <div class="divider" style="margin:2rem 0;"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;padding:.85rem 1rem;background:var(--danger-light);border-radius:var(--radius-sm);border:1px solid rgba(239,68,68,.2);">
+        <div>
+          <div style="font-weight:700;color:#991b1b;font-size:.9rem;">
+            <i class="fas fa-exclamation-triangle" style="margin-right:.4rem;"></i>Danger Zone
+          </div>
+          <div style="font-size:.8rem;color:#b91c1c;margin-top:.15rem;">
+            Permanently delete your account and all your personal data.
+          </div>
+        </div>
+        <a href="{{ url_for('profile.delete_account') }}" class="btn btn-danger btn-sm">
+          <i class="fas fa-user-slash"></i> Delete My Account
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

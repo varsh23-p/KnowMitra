@@ -1,2 +1,10 @@
-# Created by pytest automatically.
-*
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+skillswap.db
+skillswap_backup*.db
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+.env

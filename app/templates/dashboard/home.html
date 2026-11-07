@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+.welcome-banner {
+  background: var(--grad-primary);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+  position: relative;
+  overflow: hidden;
+}
+.welcome-banner::before {
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:200px;height:200px;border-radius:50%;
+  background:rgba(255,255,255,.07);
+}
+.welcome-banner::after {
+  content:'';position:absolute;bottom:-60px;right:120px;
+  width:160px;height:160px;border-radius:50%;
+  background:rgba(255,255,255,.05);
+}
+.welcome-text h2 { color:#fff;font-size:1.5rem;margin-bottom:.3rem; }
+.welcome-text p  { color:rgba(255,255,255,.72);font-size:.92rem; }
+.welcome-actions { display:flex;gap:.75rem;flex-shrink:0;position:relative;z-index:1; }
+.chart-card { background:var(--bg-card);border-radius:var(--radius);border:1px solid var(--border-light);box-shadow:var(--shadow-card);overflow:hidden; }
+.chart-card-header { padding:1.1rem 1.4rem;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between; }
+.chart-card-body  { padding:1.25rem 1.4rem; }
+.activity-item { display:flex;align-items:center;gap:.85rem;padding:.85rem 0;border-bottom:1px solid var(--border-light); }
+.activity-item:last-child { border-bottom:none; }
+.activity-icon { width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0; }
+.notif-row { display:flex;align-items:flex-start;gap:.85rem;padding:.85rem 1.25rem;border-bottom:1px solid var(--border-light);transition:var(--t-fast); }
+.notif-row:hover { background:var(--bg); }
+.notif-row.unread { background:var(--primary-lighter); }
+.notif-row:last-child { border-bottom:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome banner -->
+<div class="welcome-banner">
+  <div class="welcome-text" style="position:relative;z-index:1;">
+    <h2>Welcome back, {{ current_user.full_name.split()[0] }}! 👋</h2>
+    <p>You have {{ pending_requests }} pending request{{ 's' if pending_requests != 1 }} and {{ active_exchanges }} active exchange{{ 's' if active_exchanges != 1 }}.</p>
+  </div>
+  <div class="welcome-actions">
+    <a href="{{ url_for('matching.matches') }}" class="btn btn-light btn-sm">
+      <i class="fas fa-magic"></i> Find Matches
+    </a>
+    <a href="{{ url_for('skills.manage') }}" class="btn btn-outline-white btn-sm">
+      <i class="fas fa-cogs"></i> My Skills
+    </a>
+  </div>
+</div>
+
+<!-- ── Stat Cards ────────────────────────────────────────────── -->
+<div class="grid-4 mb-3">
+  <div class="stat-card purple">
+    <div class="stat-icon purple"><i class="fas fa-users"></i></div>
+    <div class="stat-body">
+      <div class="stat-value" data-count="{{ total_connections }}">{{ total_connections }}</div>
+      <div class="stat-label">Total Connections</div>
+      <div class="stat-change up"><i class="fas fa-arrow-up"></i> Active network</div>
+    </div>
+  </div>
+  <div class="stat-card blue">
+    <div class="stat-icon blue"><i class="fas fa-handshake"></i></div>
+    <div class="stat-body">
+      <div class="stat-value" data-count="{{ active_exchanges }}">{{ active_exchanges }}</div>
+      <div class="stat-label">Active Exchanges</div>
+      <div class="stat-change up"><i class="fas fa-circle" style="font-size:.5rem;"></i> In progress</div>
+    </div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-icon green"><i class="fas fa-check-double"></i></div>
+    <div class="stat-body">
+      <div class="stat-value" data-count="{{ completed_exchanges }}">{{ completed_exchanges }}</div>
+      <div class="stat-label">Completed</div>
+      <div class="stat-change up"><i class="fas fa-arrow-up"></i> Great progress!</div>
+    </div>
+  </div>
+  <div class="stat-card orange">
+    <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
+    <div class="stat-body">
+      <div class="stat-value" data-count="{{ pending_requests }}">{{ pending_requests }}</div>
+      <div class="stat-label">Pending Requests</div>
+      {% if pending_requests > 0 %}
+      <div class="stat-change" style="color:var(--warning);"><i class="fas fa-exclamation-circle"></i> Needs attention</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Average Rating Card ───────────────────────────────────── -->
+<div class="stat-card cyan mb-3" style="border-left:4px solid var(--accent);">
+  <div class="stat-icon cyan"><i class="fas fa-star"></i></div>
+  <div class="stat-body">
+    <div class="stat-value">{{ avg_rating }}</div>
+    <div class="stat-label">Average Rating</div>
+    <div style="display:flex;gap:.15rem;margin-top:.35rem;">
+      {% for i in range(1,6) %}
+        <i class="fas fa-star" style="color:{% if i<=avg_rating|int %}#f59e0b{% else %}#e2dff5{% endif %};font-size:.82rem;"></i>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Main Grid ─────────────────────────────────────────────── -->
+<div style="display:grid;grid-template-columns:1fr 1.5fr;gap:1.25rem;margin-bottom:1.25rem;">
+
+  <!-- Profile summary card -->
+  <div style="display:flex;flex-direction:column;gap:1.25rem;">
+    <div class="card">
+      <div style="height:70px;background:var(--grad-primary);position:relative;border-radius:var(--radius) var(--radius) 0 0;">
+        <div style="position:absolute;bottom:-28px;left:1.25rem;">
+          {% if current_user.profile_photo and current_user.profile_photo != 'default_avatar.png' %}
+            <img src="{{ url_for('static', filename='uploads/' + current_user.profile_photo) }}"
+                 class="avatar avatar-md" style="border:4px solid #fff;box-shadow:var(--shadow-sm);" alt="avatar"/>
+          {% else %}
+            <div class="avatar-placeholder avatar-md" style="border:4px solid #fff;box-shadow:var(--shadow-sm);">
+              {{ current_user.full_name[0].upper() }}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-body" style="padding-top:2.5rem;">
+        <div style="font-weight:800;font-size:1.05rem;">{{ current_user.full_name }}</div>
+        <div style="font-size:.82rem;color:var(--text-muted);margin-top:.15rem;">
+          {{ current_user.college or 'No college set' }}
+          {% if current_user.year %} · {{ current_user.year }}{% endif %}
+        </div>
+        <div style="display:flex;gap:.2rem;margin:.6rem 0;">
+          {% for i in range(1,6) %}
+            <i class="fas fa-star" style="color:{% if i<=avg_rating|int %}#f59e0b{% else %}#e2dff5{% endif %};font-size:.92rem;"></i>
+          {% endfor %}
+          <span style="font-size:.8rem;color:var(--text-muted);margin-left:.3rem;">({{ avg_rating }})</span>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;">
+          <span class="badge badge-primary"><i class="fas fa-chalkboard-teacher"></i> {{ current_user.teaching_skills.count() }} Teaching</span>
+          <span class="badge badge-secondary"><i class="fas fa-book-open"></i> {{ current_user.learning_skills.count() }} Learning</span>
+        </div>
+        <div style="display:flex;gap:.6rem;margin-top:1rem;">
+          <a href="{{ url_for('profile.edit') }}" class="btn btn-ghost btn-sm flex-1"><i class="fas fa-edit"></i> Edit</a>
+          <a href="{{ url_for('profile.view', user_id=current_user.id) }}" class="btn btn-outline btn-sm flex-1"><i class="fas fa-eye"></i> View</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="card">
+      <div class="card-header"><h4 style="font-size:.95rem;"><i class="fas fa-bolt" style="color:var(--warning);"></i> Quick Actions</h4></div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:.55rem;padding:1rem;">
+        {% set actions = [
+          (url_for('matching.matches'),          'fa-magic',       'purple', 'Find Skill Matches'),
+          (url_for('exchanges.index', tab='pending'), 'fa-inbox',  'orange', 'View Pending Requests'),
+          (url_for('messages.inbox'),            'fa-envelope',    'blue',   'Check Messages'),
+          (url_for('skills.manage'),             'fa-cogs',        'green',  'Manage My Skills'),
+          (url_for('profile.browse'),            'fa-users',       'cyan',   'Browse Students'),
+        ] %}
+        {% for href, icon, color, label in actions %}
+        <a href="{{ href }}" style="display:flex;align-items:center;gap:.75rem;padding:.65rem .85rem;border-radius:var(--radius-sm);transition:var(--t-fast);text-decoration:none;color:var(--text-primary);font-size:.88rem;font-weight:500;"
+           onmouseover="this.style.background='var(--primary-lighter)';this.style.color='var(--primary)'"
+           onmouseout="this.style.background='';this.style.color='var(--text-primary)'">
+          <span style="width:32px;height:32px;border-radius:var(--radius-xs);background:var(--{{ color }}-light,var(--primary-light));color:var(--{{ color }},var(--primary));display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;">
+            <i class="fas {{ icon }}"></i>
+          </span>
+          {{ label }}
+          <i class="fas fa-chevron-right" style="margin-left:auto;font-size:.7rem;opacity:.4;"></i>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts grid: teaching + learning -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <h4 style="font-size:.95rem;margin:0;"><i class="fas fa-chart-bar" style="color:var(--primary);margin-right:.4rem;"></i>Popular Teaching Skills</h4>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-top:.15rem;">Most taught skills on the platform</div>
+      </div>
+      <span class="badge badge-primary">Live</span>
+    </div>
+    <div class="chart-card-body">
+      <div style="position:relative;height:240px;">
+        <canvas id="skillsChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Second chart row: learning + monthly ──────────────────── -->
+<div class="grid-2 mb-3">
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <h4 style="font-size:.95rem;margin:0;"><i class="fas fa-book-open" style="color:var(--secondary);margin-right:.4rem;"></i>Most Requested Learning Skills</h4>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-top:.15rem;">What students want to learn</div>
+      </div>
+    </div>
+    <div class="chart-card-body">
+      <div style="position:relative;height:240px;">
+        <canvas id="learningChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <h4 style="font-size:.95rem;margin:0;"><i class="fas fa-chart-line" style="color:var(--accent);margin-right:.4rem;"></i>Monthly Exchange Activity</h4>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-top:.15rem;">Exchanges created per month (last 6 months)</div>
+      </div>
+    </div>
+    <div class="chart-card-body">
+      <div style="position:relative;height:240px;">
+        <canvas id="monthlyChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Learning progress doughnut ────────────────────────────── -->
+<div class="grid-2 mb-3" style="grid-template-columns:1fr 1fr;">
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <h4 style="font-size:.95rem;margin:0;"><i class="fas fa-graduation-cap" style="color:var(--success);margin-right:.4rem;"></i>Learning Progress</h4>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-top:.15rem;">Your skill learning journey</div>
+      </div>
+    </div>
+    <div class="chart-card-body">
+      <div style="position:relative;height:240px;display:flex;align-items:center;justify-content:center;">
+        <canvas id="progressChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+<!-- ── Recommended Matches ───────────────────────────────────── -->
+<div class="card mb-3">
+  <div class="card-header">
+    <h4 style="font-size:.95rem;"><i class="fas fa-magic" style="color:var(--primary);"></i> Recommended Matches</h4>
+    <a href="{{ url_for('matching.matches') }}" class="btn btn-ghost btn-sm">View All <i class="fas fa-arrow-right" style="font-size:.75rem;"></i></a>
+  </div>
+  <div class="card-body">
+    {% if top_matches %}
+    <div class="grid-2" style="gap:1rem;">
+      {% for m in top_matches %}
+      <div class="match-card">
+        <div class="score-ring" style="--pct:{{ m.score }}%;">
+          <span>{{ m.score }}%</span>
+        </div>
+        {% if m.user.profile_photo and m.user.profile_photo != 'default_avatar.png' %}
+          <img src="{{ url_for('static', filename='uploads/' + m.user.profile_photo) }}" class="avatar avatar-sm" alt="avatar"/>
+        {% else %}
+          <div class="avatar-placeholder avatar-sm">{{ m.user.full_name[0].upper() }}</div>
+        {% endif %}
+        <div class="match-info" style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ m.user.full_name }}</div>
+          <div style="font-size:.78rem;color:var(--text-muted);">{{ m.user.college or 'Student' }}</div>
+          {% for reason in m.reasons[:1] %}
+            <div class="match-reason"><i class="fas fa-check-circle"></i> {{ reason }}</div>
+          {% endfor %}
+          <div style="display:flex;gap:.4rem;margin-top:.6rem;">
+            <a href="{{ url_for('profile.view', user_id=m.user.id) }}" class="btn btn-ghost btn-sm">View</a>
+            <a href="{{ url_for('exchanges.send', receiver_id=m.user.id) }}" class="btn btn-primary btn-sm">Connect</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:2rem 0;">
+      <div class="empty-icon"><i class="fas fa-search"></i></div>
+      <h3>No matches yet</h3>
+      <p>Add teaching and learning skills to get matched with other students.</p>
+      <a href="{{ url_for('skills.manage') }}" class="btn btn-primary btn-sm">Add Skills</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ── Activity + Notifications ─────────────────────────────── -->
+<div class="grid-2">
+
+  <!-- Recent activity -->
+  <div class="card">
+    <div class="card-header">
+      <h4 style="font-size:.95rem;"><i class="fas fa-history" style="color:var(--secondary);"></i> Recent Activity</h4>
+      <a href="{{ url_for('exchanges.index') }}" class="btn btn-ghost btn-sm">All</a>
+    </div>
+    <div class="card-body" style="padding:0;">
+      {% if recent_requests %}
+        {% for req in recent_requests %}
+          {% set other = req.receiver if req.sender_id == current_user.id else req.sender %}
+          {% set status_colors = {'pending':'orange','accepted':'blue','completed':'green','rejected':'danger','cancelled':'danger'} %}
+          <div class="activity-item" style="padding:.85rem 1.25rem;">
+            <div class="activity-icon" style="background:var(--{{ status_colors.get(req.status,'blue') }}-light,var(--primary-light));color:var(--{{ status_colors.get(req.status,'blue') }},var(--primary));">
+              <i class="fas {% if req.status=='completed' %}fa-check{% elif req.status=='pending' %}fa-clock{% elif req.status=='accepted' %}fa-handshake{% else %}fa-times{% endif %}"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ other.full_name }}</div>
+              <div style="font-size:.76rem;color:var(--text-muted);">
+                {% if req.sender_id == current_user.id %}You sent{% else %}Sent you{% endif %} a request
+              </div>
+            </div>
+            <span class="badge badge-{{ 'warning' if req.status=='pending' else 'success' if req.status in ['accepted','completed'] else 'danger' }}">
+              {{ req.status }}
+            </span>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state" style="padding:2rem;">
+          <p>No recent activity yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Notifications -->
+  <div class="card">
+    <div class="card-header">
+      <h4 style="font-size:.95rem;"><i class="fas fa-bell" style="color:var(--warning);"></i> Notifications
+        {% if current_user.unread_notifications > 0 %}
+          <span class="badge badge-danger" style="margin-left:.4rem;">{{ current_user.unread_notifications }}</span>
+        {% endif %}
+      </h4>
+    </div>
+    <div style="max-height:320px;overflow-y:auto;">
+      {% if notifications %}
+        {% for n in notifications %}
+        <div class="notif-row {{ 'unread' if not n.is_read }}">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;">
+            <i class="fas {{ n.icon }}"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:{{ '700' if not n.is_read else '500' }};font-size:.86rem;line-height:1.35;">{{ n.title }}</div>
+            {% if n.body %}
+              <div style="font-size:.78rem;color:var(--text-muted);margin-top:.15rem;">{{ n.body[:70] }}{% if n.body|length > 70 %}…{% endif %}</div>
+            {% endif %}
+            <div style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem;"><i class="fas fa-clock"></i> {{ n.created_at.strftime('%b %d, %H:%M') }}</div>
+          </div>
+          {% if not n.is_read %}
+          <form method="POST" action="{{ url_for('dashboard.mark_notification_read', nid=n.id) }}" style="flex-shrink:0;">
+            <button type="submit" class="btn btn-ghost btn-sm" title="Mark read"><i class="fas fa-check"></i></button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state" style="padding:2rem;">
+          <p>All caught up! No new notifications.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const CHART_COLORS = ['#7957FF','#FF795C','#F7C95B','#22c55e','#0ea5e9','#ef4444','#6240f0','#f59e0b'];
+const CHART_OPTIONS = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: { backgroundColor:'#1e1048', titleColor:'#fff', bodyColor:'rgba(255,255,255,.75)', padding:10, cornerRadius:8 }
+  },
+  scales: {
+    y: { beginAtZero:true, ticks:{stepSize:1,color:'#9896b8'}, grid:{color:'rgba(0,0,0,.04)'}, border:{dash:[4,4]} },
+    x: { ticks:{color:'#9896b8',maxRotation:35}, grid:{display:false} }
+  }
+};
+
+// ── 1. Popular teaching skills (bar) ──────────────────────────
+(async () => {
+  const resp = await fetch('{{ url_for("dashboard.chart_data") }}');
+  const d = await resp.json();
+  const ctx = document.getElementById('skillsChart');
+  if (!ctx || !d.labels.length) return;
+  new Chart(ctx, { type:'bar', data:{ labels:d.labels, datasets:[{
+    label:'Students Teaching', data:d.data, backgroundColor:CHART_COLORS,
+    borderRadius:8, borderSkipped:false, borderWidth:0 }] }, options:CHART_OPTIONS });
+})();
+
+// ── 2. Most requested learning skills (bar) ────────────────────
+(async () => {
+  const resp = await fetch('{{ url_for("dashboard.chart_data_learning") }}');
+  const d = await resp.json();
+  const ctx = document.getElementById('learningChart');
+  if (!ctx || !d.labels.length) {
+    if (ctx) ctx.parentElement.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:.88rem;">No learning skills data yet</div>';
+    return;
+  }
+  new Chart(ctx, { type:'bar', data:{ labels:d.labels, datasets:[{
+    label:'Students Learning', data:d.data, backgroundColor:CHART_COLORS,
+    borderRadius:8, borderSkipped:false, borderWidth:0 }] }, options:CHART_OPTIONS });
+})();
+
+// ── 3. Monthly exchange activity (line) ───────────────────────
+(async () => {
+  const resp = await fetch('{{ url_for("dashboard.chart_data_monthly") }}');
+  const d = await resp.json();
+  const ctx = document.getElementById('monthlyChart');
+  if (!ctx) return;
+  new Chart(ctx, { type:'line', data:{ labels:d.labels, datasets:[{
+    label:'Exchanges Created', data:d.data,
+    borderColor:'#06b6d4', backgroundColor:'rgba(6,182,212,.1)',
+    borderWidth:2.5, fill:true, tension:.35,
+    pointBackgroundColor:'#06b6d4', pointBorderColor:'#fff',
+    pointBorderWidth:2, pointRadius:5, pointHoverRadius:7 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{backgroundColor:'#1e1048',titleColor:'#fff',bodyColor:'rgba(255,255,255,.75)',padding:10,cornerRadius:8} },
+      scales:{ y:{beginAtZero:true,ticks:{stepSize:1,color:'#9896b8'},grid:{color:'rgba(0,0,0,.04)'},border:{dash:[4,4]}},
+               x:{ticks:{color:'#9896b8'},grid:{display:false}} } } });
+})();
+
+// ── 4. Learning progress (doughnut) ────────────────────────────
+(async () => {
+  const resp = await fetch('{{ url_for("dashboard.chart_data_progress") }}');
+  const d = await resp.json();
+  const ctx = document.getElementById('progressChart');
+  if (!ctx) return;
+  if (d.total === 0) {
+    ctx.parentElement.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:.88rem;">Add learning skills to track your progress</div>';
+    return;
+  }
+  new Chart(ctx, { type:'doughnut', data:{ labels:d.labels, datasets:[{
+    data:d.data, backgroundColor:['#10b981','#f59e0b','#e2dff5'],
+    borderWidth:0, hoverOffset:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{position:'bottom',labels:{padding:15,font:{size:11},color:'#5b5980'}} } } });
+})();
+</script>
+{% endblock %}

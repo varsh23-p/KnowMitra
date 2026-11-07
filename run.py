@@ -1,16 +1,16 @@
-"""
-run.py - Application entry point.
 
-Uses socketio.run() instead of app.run() so that WebSocket
-connections are handled correctly by Flask-SocketIO.
-
-Run with: python run.py
-"""
+import os
 from app import create_app, socketio
 
-app = create_app('development')
+# Production configuration for Render
+app = create_app('production')
 
 if __name__ == '__main__':
-    # allow_unsafe_werkzeug=True is required when running SocketIO
-    # with the Werkzeug dev server (fine for development).
-    socketio.run(app, debug=True, port=5000, allow_unsafe_werkzeug=True)
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(
+        app,
+        host='0.0.0.0',
+        port=port,
+        debug=False,
+        allow_unsafe_werkzeug=True
+    )

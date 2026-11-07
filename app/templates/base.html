@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}KnowMitra{% endblock %} – Campus Peer Learning Platform</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"/>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ══ Sidebar ═══════════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon"><i class="fas fa-seedling"></i></div>
+      <div class="sidebar-logo-text">Know<span>Mitra</span>
+        <span class="sidebar-logo-sub">Campus Peer Learning</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-label">Main</div>
+      <a href="{{ url_for('dashboard.home') }}"     class="nav-item"><i class="fas fa-home"></i>      Dashboard</a>
+      <a href="{{ url_for('matching.matches') }}"   class="nav-item"><i class="fas fa-magic"></i>     Find Matches</a>
+      <a href="{{ url_for('profile.browse') }}"     class="nav-item"><i class="fas fa-users"></i>     Browse Students</a>
+
+      <div class="nav-label">Skills</div>
+      <a href="{{ url_for('skills.manage') }}"      class="nav-item"><i class="fas fa-cogs"></i>      My Skills</a>
+      <a href="{{ url_for('skills.index') }}"       class="nav-item"><i class="fas fa-layer-group"></i> Skill Library</a>
+
+      <div class="nav-label">Activity</div>
+      <a href="{{ url_for('exchanges.index') }}"    class="nav-item">
+        <i class="fas fa-handshake"></i> Exchanges
+        {% if current_user.pending_requests_count > 0 %}
+          <span class="nav-badge">{{ current_user.pending_requests_count }}</span>
+        {% endif %}
+      </a>
+      <a href="{{ url_for('messages.inbox') }}"     class="nav-item"><i class="fas fa-envelope"></i>  Messages</a>
+
+      <div class="nav-label">Profile</div>
+      <a href="{{ url_for('profile.view', user_id=current_user.id) }}" class="nav-item">
+        <i class="fas fa-user-circle"></i> My Profile
+      </a>
+      <a href="{{ url_for('profile.edit') }}"       class="nav-item"><i class="fas fa-edit"></i>      Edit Profile</a>
+
+      {% if current_user.is_admin %}
+      <div class="sidebar-divider"></div>
+      <div class="nav-label">Admin</div>
+      <a href="{{ url_for('admin.index') }}"        class="nav-item"><i class="fas fa-shield-alt"></i> Admin Panel</a>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="{{ url_for('profile.view', user_id=current_user.id) }}" class="sidebar-user">
+        {% if current_user.profile_photo and current_user.profile_photo != 'default_avatar.png' %}
+          <img src="{{ url_for('static', filename='uploads/' + current_user.profile_photo) }}"
+               class="avatar avatar-sm" alt="avatar"
+               data-initials="{{ current_user.full_name[0].upper() }}"/>
+        {% else %}
+          <div class="avatar-placeholder avatar-sm">{{ current_user.full_name[0].upper() }}</div>
+        {% endif %}
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">{{ current_user.full_name }}</div>
+          <div class="sidebar-user-role">
+            {% if current_user.is_super_admin %}
+              <span style="color:var(--yellow);font-size:.72rem;font-weight:700;">
+                <i class="fas fa-crown" style="font-size:.65rem;"></i> Super Admin
+              </span>
+            {% elif current_user.is_admin %}
+              <span style="color:var(--purple);font-size:.72rem;font-weight:700;">
+                <i class="fas fa-shield-alt" style="font-size:.65rem;"></i> Administrator
+              </span>
+            {% else %}
+              {{ current_user.college or 'Student' }}
+            {% endif %}
+          </div>
+        </div>
+        <i class="fas fa-chevron-right sidebar-user-arrow"></i>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Mobile overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ══ Main content ══════════════════════════════════════════ -->
+  <div class="main-content">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="topbar-btn hamburger-btn" aria-label="Menu">
+          <i class="fas fa-bars"></i>
+        </button>
+        <span class="topbar-title">{% block page_title %}KnowMitra{% endblock %}</span>
+      </div>
+
+      <div class="topbar-right">
+        <!-- Notifications bell -->
+        <div class="dropdown">
+          <button class="topbar-btn" data-dropdown="notifMenu" style="position:relative;" aria-label="Notifications" id="notifBell">
+            <i class="fas fa-bell"></i>
+            <span class="notif-bubble" id="notifBadge" style="display:none;">0</span>
+          </button>
+          <div class="dropdown-menu" id="notifMenu" style="min-width:340px;max-height:480px;overflow-y:auto;right:0;">
+            <!-- Header with actions -->
+            <div class="dropdown-header" style="display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg-card);z-index:10;">
+              <span style="font-weight:700;font-size:.9rem;">
+                <i class="fas fa-bell" style="color:var(--primary);margin-right:.4rem;"></i>Notifications
+              </span>
+              <div style="display:flex;gap:.3rem;">
+                <button onclick="markAllRead()" style="background:none;border:none;font-size:.72rem;color:var(--primary);cursor:pointer;padding:.2rem .4rem;border-radius:4px;">
+                  <i class="fas fa-check-double" style="font-size:.65rem;"></i> Mark all read
+                </button>
+                <button onclick="clearAll()" style="background:none;border:none;font-size:.72rem;color:var(--danger);cursor:pointer;padding:.2rem .4rem;border-radius:4px;">
+                  <i class="fas fa-trash" style="font-size:.65rem;"></i> Clear
+                </button>
+              </div>
+            </div>
+            <!-- Notification items container -->
+            <div id="notifList" style="min-height:60px;">
+              <div style="padding:1.5rem 1rem;text-align:center;color:var(--text-muted);font-size:.85rem;">
+                <i class="fas fa-bell-slash" style="font-size:1.5rem;opacity:.35;display:block;margin-bottom:.5rem;"></i>
+                No notifications yet
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User menu -->
+        <div class="dropdown">
+          <button class="topbar-btn" data-dropdown="userMenu" aria-label="Account" style="overflow:hidden;padding:0;width:40px;height:40px;border-radius:50%;">
+            {% if current_user.profile_photo and current_user.profile_photo != 'default_avatar.png' %}
+              <img src="{{ url_for('static', filename='uploads/' + current_user.profile_photo) }}"
+                   style="width:100%;height:100%;object-fit:cover;" alt="avatar"/>
+            {% else %}
+              <div style="width:100%;height:100%;background:var(--grad-primary);color:#fff;font-weight:800;font-size:.85rem;display:flex;align-items:center;justify-content:center;">
+                {{ current_user.full_name[0].upper() }}
+              </div>
+            {% endif %}
+          </button>
+          <div class="dropdown-menu" id="userMenu">
+            <div class="dropdown-header">
+              <div style="font-weight:700;font-size:.92rem;">{{ current_user.full_name }}</div>
+              <div style="color:var(--text-muted);font-size:.78rem;margin-top:.1rem;">{{ current_user.email }}</div>
+            </div>
+            <a href="{{ url_for('profile.view', user_id=current_user.id) }}" class="dropdown-item"><i class="fas fa-user"></i>My Profile</a>
+            <a href="{{ url_for('profile.edit') }}"   class="dropdown-item"><i class="fas fa-edit"></i>Edit Profile</a>
+            <a href="{{ url_for('skills.manage') }}"  class="dropdown-item"><i class="fas fa-cogs"></i>My Skills</a>
+            <div class="dropdown-divider"></div>
+            {% if current_user.is_admin %}
+            <form method="POST" action="{{ url_for('admin.logout') }}">
+              <button type="submit" class="dropdown-item danger" style="width:100%;text-align:left;">
+                <i class="fas fa-sign-out-alt"></i>Sign Out (Admin)
+              </button>
+            </form>
+            {% else %}
+            <a href="{{ url_for('auth.logout_confirm') }}" class="dropdown-item danger"><i class="fas fa-sign-out-alt"></i>Sign Out</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Flash messages as inline alerts -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div style="padding:.75rem 1.75rem 0;">
+        {% for cat, msg in messages %}
+        <div class="alert alert-{{ 'danger' if cat in ['error','danger'] else cat if cat in ['success','warning','info'] else 'info' }}">
+          <i class="fas {% if cat=='success' %}fa-check-circle{% elif cat in ['danger','error'] %}fa-times-circle{% elif cat=='warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} alert-icon"></i>
+          <span class="alert-content">{{ msg }}</span>
+          <button class="alert-close" type="button" aria-label="Close"><i class="fas fa-times"></i></button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Page content -->
+    <main class="page-content">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div><!-- /main-content -->
+</div><!-- /app-layout -->
+
+<button id="scrollTopBtn" aria-label="Back to top"><i class="fas fa-arrow-up"></i></button>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<!-- Socket.IO client — loaded globally so calls work on every page -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+
+<!-- ══ Global call overlay (works on every page) ════════════════ -->
+<style>
+.global-call-overlay {
+  position: fixed; inset: 0; z-index: 5000;
+  background: rgba(23,21,47,.95); backdrop-filter: blur(16px);
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column; gap: 1.25rem;
+}
+.global-call-overlay.show { display: flex; }
+.global-call-avatar {
+  width: 100px; height: 100px; border-radius: 50%;
+  background: var(--grad-primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.5rem; font-weight: 800; color: #fff;
+}
+.global-call-name { color: #fff; font-size: 1.4rem; font-weight: 700; }
+.global-call-status { color: rgba(255,255,255,.5); font-size: .95rem; }
+.global-call-controls { display: flex; gap: 1rem; margin-top: 1rem; }
+.global-call-btn {
+  width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; transition: var(--t-bounce); color: #fff;
+}
+.global-call-btn.accept { background: var(--success); }
+.global-call-btn.reject { background: var(--danger); }
+.global-call-btn.end    { background: var(--danger); }
+.global-call-btn:active { transform: scale(.9); }
+.global-call-type-badge {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: rgba(121,87,255,.2); border: 1px solid rgba(121,87,255,.35);
+  border-radius: 99px; padding: .25rem .8rem;
+  font-size: .78rem; color: var(--yellow); font-weight: 600;
+}
+</style>
+<div class="global-call-overlay" id="globalCallOverlay">
+  <div class="global-call-avatar" id="globalCallAvatar">—</div>
+  <div class="global-call-name" id="globalCallName">—</div>
+  <div class="global-call-type-badge" id="globalCallType">Incoming call</div>
+  <div class="global-call-status" id="globalCallStatus">Incoming call…</div>
+  <div class="global-call-controls" id="globalCallControls"></div>
+</div>
+
+<!-- ══ Global Socket.IO connection + notification + call system ═ -->
+<script>
+(function () {
+  'use strict';
+
+  // ── Create the global socket (available to all pages) ────────
+  const socket = io({ transports: ['websocket', 'polling'] });
+  window.skillswapSocket = socket;  // expose for conversation.html to use
+
+  socket.on('connect', () => {
+    socket.emit('join_user_room');
+  });
+
+  // ══════════════════════════════════════════════════════════════
+  // NOTIFICATION SYSTEM (existing — kept here)
+  // ══════════════════════════════════════════════════════════════
+
+  const badge     = document.getElementById('notifBadge');
+  const notifList = document.getElementById('notifList');
+
+  async function fetchNotifications() {
+    try {
+      const resp = await fetch('{{ url_for("dashboard.notifications_api") }}');
+      if (!resp.ok) return;
+      const data = await resp.json();
+      updateBadge(data.unread_count);
+      renderNotifications(data.notifications);
+    } catch (e) {}
+  }
+
+  function updateBadge(count) {
+    if (count > 0) {
+      badge.textContent = count > 99 ? '99+' : count;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  function renderNotifications(notifs) {
+    if (!notifs || notifs.length === 0) {
+      notifList.innerHTML = '<div style="padding:1.5rem 1rem;text-align:center;color:var(--text-muted);font-size:.85rem;"><i class="fas fa-bell-slash" style="font-size:1.5rem;opacity:.35;display:block;margin-bottom:.5rem;"></i>No notifications yet</div>';
+      return;
+    }
+    let html = '';
+    notifs.forEach(n => {
+      const unreadClass = n.is_read ? '' : 'unread';
+      const iconColors = { 'message':'var(--secondary)','exchange_request':'var(--warning)','exchange_accepted':'var(--success)','exchange_rejected':'var(--danger)','review':'#f59e0b','call_audio':'var(--accent)','call_video':'var(--primary)','general':'var(--primary)' };
+      const color = iconColors[n.notif_type] || iconColors.general;
+      const link = n.link || '#';
+      const safeTitle = (n.title||'').replace(/</g,'&lt;');
+      const safeBody = (n.body||'').replace(/</g,'&lt;');
+      html += `<a href="${link}" class="dropdown-item ${unreadClass}" style="padding:.7rem 1rem;display:flex;gap:.6rem;align-items:flex-start;border-bottom:1px solid var(--border-light);" onclick="markReadAndNavigate(${n.id},'${link}')"><div style="width:32px;height:32px;border-radius:50%;background:${color}22;color:${color};display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;"><i class="fas ${n.icon}"></i></div><div style="flex:1;min-width:0;"><div style="font-weight:${n.is_read?'500':'700'};font-size:.84rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeTitle}</div>${safeBody?`<div style="font-size:.75rem;color:var(--text-muted);margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeBody}</div>`:''}<div style="font-size:.68rem;color:var(--text-muted);margin-top:.15rem;">${n.time}</div></div>${!n.is_read?'<div style="width:7px;height:7px;border-radius:50%;background:var(--primary);flex-shrink:0;margin-top:4px;"></div>':''}</a>`;
+    });
+    notifList.innerHTML = html;
+  }
+
+  window.markReadAndNavigate = function(id, link) { fetch(`/dashboard/notifications/${id}/read`,{method:'POST'}).then(()=>fetchNotifications()); };
+  window.markAllRead = function() { fetch('/dashboard/notifications/mark-all-read',{method:'POST'}).then(r=>r.json()).then(d=>{updateBadge(d.unread_count);fetchNotifications();}); };
+  window.clearAll = function() { if(!confirm('Clear all notifications?'))return; fetch('/dashboard/notifications/clear',{method:'POST'}).then(r=>r.json()).then(d=>{updateBadge(0);notifList.innerHTML='<div style="padding:1.5rem 1rem;text-align:center;color:var(--text-muted);font-size:.85rem;"><i class="fas fa-bell-slash" style="font-size:1.5rem;opacity:.35;display:block;margin-bottom:.5rem;"></i>No notifications</div>';}); };
+
+  fetchNotifications();
+  setInterval(fetchNotifications, 30000);
+
+  socket.on('notification', (data) => {
+    fetchNotifications();
+    if (window.Notification && Notification.permission === 'granted') {
+      const safeTitle = data.title || 'New notification';
+      const safeBody = data.notif_type === 'message' ? 'You have a new message' : (data.body || 'Click to view');
+      const notif = new Notification(safeTitle, { body: safeBody, tag: 'knowmitra-'+data.notif_type+'-'+data.id });
+      notif.onclick = () => { window.focus(); if(data.link) window.location.href=data.link; notif.close(); };
+      setTimeout(() => notif.close(), 5000);
+    }
+  });
+
+  // Request browser notification permission on first click
+  let permRequested = false;
+  document.addEventListener('click', function reqPerm() {
+    if (permRequested) return; permRequested = true;
+    if (window.Notification && Notification.permission === 'default') Notification.requestPermission();
+    document.removeEventListener('click', reqPerm);
+  }, { once: true });
+
+  // ══════════════════════════════════════════════════════════════
+  // GLOBAL INCOMING CALL SYSTEM (works on EVERY page)
+  // ══════════════════════════════════════════════════════════════
+
+  const callOverlay   = document.getElementById('globalCallOverlay');
+  const callAvatar    = document.getElementById('globalCallAvatar');
+  const callName      = document.getElementById('globalCallName');
+  const callTypeBadge = document.getElementById('globalCallType');
+  const callStatus    = document.getElementById('globalCallStatus');
+  const callControls  = document.getElementById('globalCallControls');
+  let   activeCallId  = null;
+  let   ringtone      = null;
+
+  // ── Ringtone (Web Audio API beep) ────────────────────────────
+  function startRingtone() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      ringtone = setInterval(() => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        gain.gain.value = 0.1;
+        osc.start();
+        setTimeout(() => { osc.stop(); }, 200);
+      }, 600);
+    } catch(e) {}
+  }
+
+  function stopRingtone() {
+    if (ringtone) { clearInterval(ringtone); ringtone = null; }
+  }
+
+  function showCallOverlay(name, initials, type, status, isIncoming) {
+    callAvatar.textContent = initials;
+    callName.textContent = name;
+    callTypeBadge.innerHTML = '<i class="fas fa-' + (type === 'video' ? 'video' : 'phone') + '"></i> ' + (type === 'video' ? 'Video' : 'Audio') + ' Call';
+    callStatus.textContent = status;
+    callOverlay.classList.add('show');
+    if (isIncoming) startRingtone();
+  }
+
+  function hideCallOverlay() {
+    callOverlay.classList.remove('show');
+    stopRingtone();
+  }
+
+  // ── incoming_call: fired when someone calls us ───────────────
+  socket.on('incoming_call', (data) => {
+    // Prevent duplicate popups if conversation page also receives this
+    if (activeCallId !== null) return;
+    activeCallId = data.call_id;
+
+    const isVideo = data.call_type === 'video';
+    showCallOverlay(data.caller_name, data.caller_name[0].toUpperCase(),
+                    data.call_type, 'Incoming ' + data.call_type + ' call…', true);
+
+    callControls.innerHTML = `
+      <button class="global-call-btn accept" onclick="window.acceptGlobalCall(${data.call_id},'${data.call_type}',${data.caller_id})" title="Accept">
+        <i class="fas fa-phone"></i>
+      </button>
+      <button class="global-call-btn reject" onclick="window.rejectGlobalCall(${data.call_id})" title="Reject">
+        <i class="fas fa-phone-slash"></i>
+      </button>`;
+  });
+
+  // ── Accept: emit to server, then navigate to conversation ────
+  window.acceptGlobalCall = function(callId, callType, callerId) {
+    stopRingtone();
+    socket.emit('call_accept', { call_id: callId });
+    hideCallOverlay();
+    activeCallId = null;
+    // Navigate to conversation page — ?call=<id>&call_type=<type> triggers call_ready on connect
+    window.location.href = '/messages/conversation/' + callerId + '?call=' + callId + '&call_type=' + callType;
+  };
+
+  // ── Reject: emit to server ───────────────────────────────────
+  window.rejectGlobalCall = function(callId) {
+    stopRingtone();
+    socket.emit('call_reject', { call_id: callId });
+    hideCallOverlay();
+    activeCallId = null;
+  };
+
+  // ── Call rejected by the other party ─────────────────────────
+  socket.on('call_rejected', (data) => {
+    hideCallOverlay();
+    activeCallId = null;
+    if (callOverlay.classList.contains('show')) {
+      callStatus.textContent = 'Call rejected';
+      setTimeout(() => hideCallOverlay(), 2000);
+    }
+  });
+
+  // ── Call ended by the other party ────────────────────────────
+  socket.on('call_ended', (data) => {
+    hideCallOverlay();
+    activeCallId = null;
+  });
+
+  // ── Caller cancels before answer ─────────────────────────────
+  socket.on('call_cancelled', (data) => {
+    if (activeCallId === data.call_id) {
+      stopRingtone();
+      hideCallOverlay();
+      activeCallId = null;
+    }
+  });
+
+})();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,152 @@
+{% extends "base_public.html" %}
+{% block title %}Sign In{% endblock %}
+
+{% block extra_css %}
+<style>
+.auth-page { min-height:100vh; display:flex; background:var(--grad-hero); }
+.auth-left  { flex:1; display:flex; flex-direction:column; justify-content:center; padding:4rem 3rem; position:relative; overflow:hidden; }
+.auth-right { width:500px; flex-shrink:0; background:#fff; display:flex; flex-direction:column; justify-content:center; padding:3.5rem; overflow-y:auto; }
+
+/* shapes */
+.auth-shape { position:absolute; border-radius:50%; filter:blur(60px); opacity:.2; pointer-events:none; }
+.auth-shape-1 { width:400px;height:400px;background:var(--purple);top:-100px;right:-80px; }
+.auth-shape-2 { width:280px;height:280px;background:var(--orange);bottom:-60px;left:-60px;opacity:.15; }
+
+.auth-brand { display:flex; align-items:center; gap:.8rem; margin-bottom:3rem; }
+.auth-brand-icon { width:46px;height:46px;background:var(--grad-primary);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem; }
+.auth-brand-name { font-size:1.4rem;font-weight:800;color:#fff; }
+.auth-brand-name span { color:var(--yellow); }
+
+.auth-tagline h2 { font-size:2.2rem;font-weight:800;color:#fff;line-height:1.3;margin-bottom:.75rem; }
+.auth-tagline p  { color:rgba(255,255,255,.65);font-size:1rem;line-height:1.7;max-width:400px; }
+
+.auth-feature-list { list-style:none;padding:0;margin-top:2rem; }
+.auth-feature-list li {
+  display:flex;align-items:center;gap:.85rem;
+  color:rgba(255,255,255,.8);font-size:.93rem;padding:.55rem 0;
+}
+.auth-feature-check {
+  width:24px;height:24px;border-radius:50%;
+  background:rgba(121,87,255,.2);border:1px solid rgba(121,87,255,.35);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--yellow);font-size:.7rem;flex-shrink:0;
+}
+
+.auth-form-logo { display:flex;align-items:center;gap:.65rem;margin-bottom:2rem; }
+.auth-form-logo .icon { width:38px;height:38px;background:var(--primary-light);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:1rem; }
+.auth-form-logo .name { font-size:1.2rem;font-weight:800;color:var(--text-primary); }
+.auth-form-logo .name span { color:var(--primary); }
+
+.auth-title { font-size:1.75rem;font-weight:800;margin-bottom:.3rem; }
+.auth-subtitle { color:var(--text-muted);font-size:.92rem;margin-bottom:2rem; }
+
+.divider-or { display:flex;align-items:center;gap:.85rem;margin:1.4rem 0;color:var(--text-muted);font-size:.82rem;font-weight:500; }
+.divider-or::before,.divider-or::after { content:'';flex:1;height:1px;background:var(--border); }
+
+.auth-footer-link { text-align:center;margin-top:1.5rem;font-size:.9rem;color:var(--text-muted); }
+.auth-footer-link a { font-weight:700;color:var(--primary); }
+.auth-footer-link a:hover { text-decoration:underline; }
+
+@media(max-width:900px){
+  .auth-left { display:none; }
+  .auth-right { width:100%;padding:2.5rem 1.75rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+
+  <!-- Left panel -->
+  <div class="auth-left">
+    <div class="auth-shape auth-shape-1"></div>
+    <div class="auth-shape auth-shape-2"></div>
+
+    <div class="auth-brand">
+      <div class="auth-brand-icon"><i class="fas fa-seedling"></i></div>
+      <span class="auth-brand-name">Know<span>Mitra</span></span>
+    </div>
+
+    <div class="auth-tagline">
+      <h2>Welcome back!<br>Keep growing.</h2>
+      <p>Your peer-learning journey continues. Sign in to see your matches, messages and pending requests.</p>
+    </div>
+
+    <ul class="auth-feature-list">
+      <li><span class="auth-feature-check"><i class="fas fa-check"></i></span>Smart campus skill matching</li>
+      <li><span class="auth-feature-check"><i class="fas fa-check"></i></span>Real-time messaging with partners</li>
+      <li><span class="auth-feature-check"><i class="fas fa-check"></i></span>Peer ratings &amp; verified reviews</li>
+      <li><span class="auth-feature-check"><i class="fas fa-check"></i></span>100% free, no hidden charges</li>
+    </ul>
+  </div>
+
+  <!-- Right panel / form -->
+  <div class="auth-right">
+    <div class="auth-form-logo">
+      <div class="icon"><i class="fas fa-seedling"></i></div>
+      <div class="name">Know<span>Mitra</span></div>
+    </div>
+
+    <h1 class="auth-title">Sign in to your account</h1>
+    <p class="auth-subtitle">Don't have an account? <a href="{{ url_for('auth.register') }}" style="color:var(--primary);font-weight:700;">Create one free</a></p>
+
+    <!-- Flash alerts -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+      <div class="alert alert-{{ 'danger' if cat in ['error','danger'] else cat if cat in ['success','warning','info'] else 'info' }}">
+        <i class="fas fa-info-circle alert-icon"></i>
+        <span class="alert-content">{{ msg }}</span>
+        <button class="alert-close" type="button"><i class="fas fa-times"></i></button>
+      </div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email address</label>
+        <div class="input-icon-wrap">
+          <input type="email" id="email" name="email" class="form-control"
+                 placeholder="you@college.edu" value="{{ email or '' }}" required autofocus/>
+          <i class="fas fa-envelope input-icon"></i>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem;">
+          <label class="form-label" for="password" style="margin:0;">Password</label>
+        </div>
+        <div class="pw-wrap input-icon-wrap">
+          <input type="password" id="password" name="password" class="form-control"
+                 placeholder="Enter your password" required style="padding-left:2.75rem;padding-right:3rem;"/>
+          <i class="fas fa-lock input-icon"></i>
+          <button type="button" class="pw-toggle" aria-label="Show password">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+        <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.88rem;color:var(--text-secondary);">
+          <input type="checkbox" name="remember" style="accent-color:var(--primary);width:16px;height:16px;"> Remember me for 30 days
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg" style="font-size:1rem;">
+        <i class="fas fa-sign-in-alt"></i> Sign In
+      </button>
+    </form>
+
+    <div class="divider-or">or continue with</div>
+
+    <div class="auth-footer-link">
+      New to KnowMitra? <a href="{{ url_for('auth.register') }}">Create a free account</a>
+    </div>
+    <div style="text-align:center;margin-top:.75rem;">
+      <a href="{{ url_for('main.index') }}" style="font-size:.85rem;color:var(--text-muted);">
+        <i class="fas fa-arrow-left" style="font-size:.75rem;"></i> Back to home
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

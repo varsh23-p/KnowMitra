@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Manage Users{% endblock %}
+{% block page_title %}Manage Users{% endblock %}
+
+{% block content %}
+<div class="page-header flex-between">
+  <div>
+    <h1>Manage Users</h1>
+    <p>{{ users_pg.total }} students registered</p>
+  </div>
+  <a href="{{ url_for('admin.index') }}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<!-- Search + Status + College + Branch Filter -->
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="GET" style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap;">
+      <div style="flex:2;min-width:200px;">
+        <label style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.35rem;">Search</label>
+        <div class="input-group">
+          <input type="text" name="q" class="form-control" placeholder="Search by name or email..." value="{{ search }}" />
+          <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
+        </div>
+      </div>
+      <div style="min-width:140px;">
+        <label style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.35rem;">Status</label>
+        <select name="status" class="form-select" onchange="this.form.submit()">
+          <option value="">All users</option>
+          <option value="active" {{ 'selected' if status_filter == 'active' }}>Active only</option>
+          <option value="inactive" {{ 'selected' if status_filter == 'inactive' }}>Inactive only</option>
+          <option value="reported" {{ 'selected' if status_filter == 'reported' }}>Reported only</option>
+        </select>
+      </div>
+      {% if all_colleges %}
+      <div style="min-width:160px;">
+        <label style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.35rem;">College</label>
+        <select name="college" class="form-select" onchange="this.form.submit()">
+          <option value="">All colleges</option>
+          {% for c in all_colleges %}
+            <option value="{{ c }}" {{ 'selected' if college_filter == c }}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      {% if all_branches %}
+      <div style="min-width:160px;">
+        <label style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.35rem;">Branch</label>
+        <select name="branch" class="form-select" onchange="this.form.submit()">
+          <option value="">All branches</option>
+          {% for b in all_branches %}
+            <option value="{{ b }}" {{ 'selected' if branch_filter == b }}>{{ b }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      {% if search or status_filter or college_filter or branch_filter %}
+        <a href="{{ url_for('admin.users') }}" class="btn btn-ghost"><i class="fas fa-times"></i> Clear</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Email</th><th>College</th><th>Year</th><th>Skills</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for u in users_pg.items %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:.6rem;">
+              <div class="avatar avatar-xs avatar-placeholder" style="background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;font-size:.65rem;font-weight:700;">
+                {{ u.full_name[0].upper() }}
+              </div>
+              <strong>{{ u.full_name }}</strong>
+            </div>
+          </td>
+          <td style="color:var(--text-muted);font-size:.88rem;">{{ u.email }}</td>
+          <td>{{ u.college or '–' }}</td>
+          <td>{{ u.year or '–' }}</td>
+          <td><span class="badge badge-primary">{{ u.teaching_skills.count() }}T</span> <span class="badge badge-info">{{ u.learning_skills.count() }}L</span></td>
+          <td style="font-size:.82rem;color:var(--text-muted);">{{ u.created_at.strftime('%b %d, %Y') }}</td>
+          <td>
+            <span class="badge {{ 'badge-success' if u.is_active else 'badge-danger' }}">
+              {{ 'Active' if u.is_active else 'Inactive' }}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+              <a href="{{ url_for('profile.view', user_id=u.id) }}" class="btn btn-sm btn-ghost">View</a>
+              <form method="POST" action="{{ url_for('admin.toggle_user', user_id=u.id) }}" style="display:inline;">
+                <input type="hidden" name="q"       value="{{ search }}" />
+                <input type="hidden" name="status"  value="{{ status_filter }}" />
+                <input type="hidden" name="college" value="{{ college_filter }}" />
+                <input type="hidden" name="branch"  value="{{ branch_filter }}" />
+                <button type="submit" class="btn btn-sm {{ 'btn-danger' if u.is_active else 'btn-success' }}"
+                        data-confirm="{{ 'Deactivate' if u.is_active else 'Activate' }} {{ u.full_name }}?">
+                  {{ 'Deactivate' if u.is_active else 'Activate' }}
+                </button>
+              </form>
+              {% if not u.is_reported %}
+              <form method="POST" action="{{ url_for('admin.report_user', user_id=u.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-sm btn-warning"
+                        data-confirm="Flag {{ u.full_name }} for review?">
+                  <i class="fas fa-flag"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if users_pg.pages > 1 %}
+  <div class="card-footer">
+    <div class="pagination">
+      <a href="{{ url_for('admin.users', page=users_pg.prev_num, q=search) }}"
+         class="page-btn {{ 'disabled' if not users_pg.has_prev }}"><i class="fas fa-chevron-left"></i></a>
+      {% for p in users_pg.iter_pages() %}
+        {% if p %}
+          <a href="{{ url_for('admin.users', page=p, q=search) }}"
+             class="page-btn {{ 'active' if p == users_pg.page }}">{{ p }}</a>
+        {% else %}
+          <span class="page-btn disabled">…</span>
+        {% endif %}
+      {% endfor %}
+      <a href="{{ url_for('admin.users', page=users_pg.next_num, q=search) }}"
+         class="page-btn {{ 'disabled' if not users_pg.has_next }}"><i class="fas fa-chevron-right"></i></a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

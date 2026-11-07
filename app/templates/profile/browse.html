@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% block title %}Discover Students{% endblock %}
+{% block page_title %}Discover Students{% endblock %}
+
+{% block extra_css %}
+<style>
+.discover-hero {
+  background: var(--grad-primary);
+  border-radius: var(--radius-lg);
+  padding: 2rem 2.25rem;
+  margin-bottom: 1.75rem;
+  position: relative;
+  overflow: hidden;
+}
+.discover-hero::after {
+  content: '';
+  position: absolute;
+  right: -40px; top: -40px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.06);
+}
+.discover-hero h2 { color: #fff; font-size: 1.4rem; margin-bottom: .3rem; }
+.discover-hero p  { color: rgba(255,255,255,.7); font-size: .9rem; }
+
+.filter-chip {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .38rem .9rem; border-radius: 99px; font-size: .82rem; font-weight: 600;
+  border: 1.5px solid var(--border); background: var(--bg-card); color: var(--text-secondary);
+  cursor: pointer; transition: var(--t-fast); white-space: nowrap;
+}
+.filter-chip:hover, .filter-chip.active {
+  border-color: var(--primary); background: var(--primary-light); color: var(--primary);
+}
+
+.student-card { transition: var(--t); }
+.match-pct-badge {
+  position: absolute; top: .75rem; right: .75rem;
+  background: var(--grad-primary); color: #fff;
+  font-size: .72rem; font-weight: 800;
+  padding: .25rem .6rem; border-radius: 99px;
+  box-shadow: 0 2px 8px rgba(108,71,255,.4);
+}
+.view-toggle { display: flex; gap: .35rem; }
+.view-btn {
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--bg-card);
+  color: var(--text-muted); cursor: pointer; display: flex;
+  align-items: center; justify-content: center; transition: var(--t-fast);
+}
+.view-btn.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+
+/* List view override */
+.students-grid.list-view { grid-template-columns: 1fr !important; }
+.students-grid.list-view .student-card {
+  flex-direction: row; text-align: left; align-items: center;
+  padding: 1rem 1.25rem; gap: 1rem;
+}
+.students-grid.list-view .student-card::before { display: none; }
+.students-grid.list-view .student-card .skill-row { justify-content: flex-start; }
+.students-grid.list-view .student-card .card-actions { width: auto; flex-shrink: 0; margin-top: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero bar -->
+<div class="discover-hero">
+  <div style="position:relative;z-index:1;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h2><i class="fas fa-users" style="margin-right:.5rem;opacity:.8;"></i>Discover Students</h2>
+        <p>Find students to exchange skills with across your campus and beyond</p>
+      </div>
+      <a href="{{ url_for('matching.matches') }}" class="btn btn-light btn-sm">
+        <i class="fas fa-magic"></i> Smart Matches
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Search & Filter bar -->
+<div class="filter-bar">
+  <form method="GET" action="{{ url_for('profile.browse') }}" id="filterForm"
+        style="display:contents;">
+    <div class="filter-group" style="flex:2;min-width:200px;">
+      <label><i class="fas fa-search"></i> Search</label>
+      <div class="input-group">
+        <input type="text" name="q" class="form-control"
+               placeholder="Search by name…" value="{{ search }}"
+               oninput="this.form.submit()"/>
+        <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
+      </div>
+    </div>
+    <div class="filter-group" style="min-width:160px;">
+      <label><i class="fas fa-university"></i> College</label>
+      <input type="text" name="college" class="form-control"
+             placeholder="Filter by college…" value="{{ college }}"
+             oninput="this.form.submit()"/>
+    </div>
+    {% if search or college %}
+    <div style="align-self:flex-end;">
+      <a href="{{ url_for('profile.browse') }}" class="btn btn-light btn-sm">
+        <i class="fas fa-times"></i> Clear
+      </a>
+    </div>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Results header + controls -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem;">
+  <div style="font-size:.88rem;color:var(--text-muted);">
+    Showing <strong style="color:var(--text-primary);">{{ students.items|length }}</strong>
+    of <strong style="color:var(--text-primary);">{{ students.total }}</strong> students
+    {% if search %} for "<em>{{ search }}</em>"{% endif %}
+  </div>
+  <div class="view-toggle">
+    <button class="view-btn active" id="gridViewBtn" title="Grid view" onclick="setView('grid')">
+      <i class="fas fa-th-large"></i>
+    </button>
+    <button class="view-btn" id="listViewBtn" title="List view" onclick="setView('list')">
+      <i class="fas fa-list"></i>
+    </button>
+  </div>
+</div>
+
+<!-- Student cards grid -->
+{% if students.items %}
+<div class="grid-auto students-grid" id="studentsGrid">
+  {% for student in students.items %}
+  <div class="student-card card-hover" style="position:relative;">
+    <!-- Match percentage if available -->
+    {% if student.avg_rating >= 4.5 %}
+    <span class="match-pct-badge"><i class="fas fa-star"></i> Top Rated</span>
+    {% endif %}
+
+    <!-- Avatar -->
+    {% if student.profile_photo and student.profile_photo != 'default_avatar.png' %}
+      <img src="{{ url_for('static', filename='uploads/' + student.profile_photo) }}"
+           class="avatar avatar-md" alt="{{ student.full_name }}"
+           data-initials="{{ student.full_name[0].upper() }}"/>
+    {% else %}
+      <div class="avatar-placeholder avatar-md">{{ student.full_name[0].upper() }}</div>
+    {% endif %}
+
+    <div class="student-name">{{ student.full_name }}</div>
+    <div class="student-meta">
+      {% if student.college %}
+        <i class="fas fa-university" style="font-size:.72rem;"></i> {{ student.college }}
+      {% endif %}
+      {% if student.year %}
+        &nbsp;·&nbsp; {{ student.year }}
+      {% endif %}
+    </div>
+
+    <!-- Stars -->
+    <div style="display:flex;gap:.15rem;justify-content:center;">
+      {% for i in range(1,6) %}
+        <i class="fas fa-star" style="font-size:.8rem;color:{% if i<=student.avg_rating|int %}#f59e0b{% else %}#e2dff5{% endif %};"></i>
+      {% endfor %}
+      <span style="font-size:.75rem;color:var(--text-muted);margin-left:.2rem;">({{ student.avg_rating }})</span>
+    </div>
+
+    <!-- Teaching skills preview -->
+    <div class="skill-row">
+      {% for skill in student.teaching_skills[:3] %}
+        <span class="skill-tag skill-tag-teach" style="font-size:.72rem;">
+          <i class="fas {{ skill.icon }}"></i> {{ skill.name }}
+        </span>
+      {% endfor %}
+      {% if student.teaching_skills.count() > 3 %}
+        <span class="badge badge-muted">+{{ student.teaching_skills.count() - 3 }}</span>
+      {% endif %}
+      {% if student.teaching_skills.count() == 0 %}
+        <span style="font-size:.78rem;color:var(--text-muted);font-style:italic;">No skills listed</span>
+      {% endif %}
+    </div>
+
+    <!-- Actions -->
+    <div class="card-actions">
+      <a href="{{ url_for('profile.view', user_id=student.id) }}" class="btn btn-light btn-sm">
+        <i class="fas fa-eye"></i> View
+      </a>
+      <a href="{{ url_for('exchanges.send', receiver_id=student.id) }}" class="btn btn-primary btn-sm">
+        <i class="fas fa-paper-plane"></i> Connect
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if students.pages > 1 %}
+<div class="pagination" style="margin-top:1.75rem;justify-content:center;">
+  <a href="{{ url_for('profile.browse', page=students.prev_num, q=search, college=college) }}"
+     class="page-btn {{ 'disabled' if not students.has_prev }}">
+    <i class="fas fa-chevron-left"></i>
+  </a>
+  {% for p in students.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+    {% if p %}
+      <a href="{{ url_for('profile.browse', page=p, q=search, college=college) }}"
+         class="page-btn {{ 'active' if p == students.page }}">{{ p }}</a>
+    {% else %}
+      <span class="page-btn disabled">…</span>
+    {% endif %}
+  {% endfor %}
+  <a href="{{ url_for('profile.browse', page=students.next_num, q=search, college=college) }}"
+     class="page-btn {{ 'disabled' if not students.has_next }}">
+    <i class="fas fa-chevron-right"></i>
+  </a>
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state" style="margin-top:2rem;">
+  <div class="empty-icon"><i class="fas fa-users"></i></div>
+  <h3>No students found</h3>
+  <p>Try adjusting your search or filters to find more students.</p>
+  <a href="{{ url_for('profile.browse') }}" class="btn btn-primary">Clear Filters</a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function setView(mode) {
+  const grid    = document.getElementById('studentsGrid');
+  const gridBtn = document.getElementById('gridViewBtn');
+  const listBtn = document.getElementById('listViewBtn');
+  if (!grid) return;
+  if (mode === 'list') {
+    grid.classList.add('list-view');
+    listBtn.classList.add('active');
+    gridBtn.classList.remove('active');
+    localStorage.setItem('discoverView', 'list');
+  } else {
+    grid.classList.remove('list-view');
+    gridBtn.classList.add('active');
+    listBtn.classList.remove('active');
+    localStorage.setItem('discoverView', 'grid');
+  }
+}
+// Restore saved view
+const saved = localStorage.getItem('discoverView');
+if (saved === 'list') setView('list');
+</script>
+{% endblock %}

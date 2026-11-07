@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+{% block title %}Exchanges{% endblock %}
+{% block page_title %}Exchanges{% endblock %}
+
+{% block extra_css %}
+<style>
+.exchanges-hero {
+  background: var(--grad-primary);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.75rem;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.exchanges-hero::after {
+  content:'';position:absolute;right:-50px;top:-50px;
+  width:220px;height:220px;border-radius:50%;
+  background:rgba(255,255,255,.07);
+}
+.exchanges-hero h2 { color:#fff;font-size:1.4rem;margin-bottom:.3rem; }
+.exchanges-hero p  { color:rgba(255,255,255,.7);font-size:.88rem; }
+
+.req-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-card);
+  transition: var(--t);
+  overflow: hidden;
+}
+.req-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.req-card-header {
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  border-bottom: 1px solid var(--border-light);
+}
+.req-card-body { padding: 1rem 1.25rem; }
+.req-card-footer {
+  padding: .85rem 1.25rem;
+  background: var(--bg);
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+.skill-exchange-arrow {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  flex-wrap: wrap;
+  font-size: .85rem;
+}
+.skill-exchange-arrow i.arrow {
+  color: var(--text-muted);
+  font-size: .8rem;
+}
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .32rem .85rem;
+  border-radius: 99px;
+  font-size: .78rem;
+  font-weight: 700;
+}
+.timeline-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div class="exchanges-hero">
+  <div style="position:relative;z-index:1;">
+    <h2><i class="fas fa-handshake" style="margin-right:.5rem;opacity:.8;"></i>Skill Exchanges</h2>
+    <p>Manage your exchange requests, active sessions, and completed swaps</p>
+  </div>
+  <div style="display:flex;gap:.85rem;position:relative;z-index:1;flex-wrap:wrap;">
+    {% for val, lbl, col in [
+      (pending|length,   'Pending',   '#f59e0b'),
+      (accepted|length,  'Active',    '#10b981'),
+      (completed|length, 'Completed', '#3b82f6'),
+    ] %}
+    <div style="text-align:center;background:rgba(255,255,255,.1);border-radius:var(--radius-sm);padding:.65rem 1.1rem;min-width:70px;">
+      <div style="font-size:1.4rem;font-weight:800;color:#fff;">{{ val }}</div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.65);">{{ lbl }}</div>
+    </div>
+    {% endfor %}
+    <a href="{{ url_for('matching.matches') }}" class="btn btn-light btn-sm" style="align-self:center;">
+      <i class="fas fa-magic"></i> Find Matches
+    </a>
+  </div>
+</div>
+
+<!-- ── Tabs ─────────────────────────────────────────────────── -->
+<div data-tabs>
+  <div class="tabs-nav">
+    <button class="tab-btn" data-tab="pending">
+      <i class="fas fa-clock"></i> Pending
+      {% if pending %}<span class="tab-count warning">{{ pending|length }}</span>{% endif %}
+    </button>
+    <button class="tab-btn" data-tab="accepted">
+      <i class="fas fa-handshake"></i> Active
+      {% if accepted %}<span class="tab-count success">{{ accepted|length }}</span>{% endif %}
+    </button>
+    <button class="tab-btn" data-tab="completed">
+      <i class="fas fa-check-double"></i> Completed
+      {% if completed %}<span class="tab-count">{{ completed|length }}</span>{% endif %}
+    </button>
+    <button class="tab-btn" data-tab="rejected">
+      <i class="fas fa-times-circle"></i> Closed
+      {% if closed %}<span class="tab-count">{{ closed|length }}</span>{% endif %}
+    </button>
+  </div>
+
+  <!-- ── Pending tab ─────────────────────────────────────────── -->
+  <div class="tab-pane" data-tab-pane="pending">
+    {% if pending %}
+    <div style="display:flex;flex-direction:column;gap:.85rem;">
+      {% for req in pending %}
+        {% set other = req.receiver if req.sender_id == current_user.id else req.sender %}
+        {% set is_sender = req.sender_id == current_user.id %}
+        <div class="req-card">
+          <div class="req-card-header">
+            {% if other.profile_photo and other.profile_photo != 'default_avatar.png' %}
+              <img src="{{ url_for('static', filename='uploads/' + other.profile_photo) }}"
+                   class="avatar avatar-sm" alt="avatar"/>
+            {% else %}
+              <div class="avatar-placeholder avatar-sm">{{ other.full_name[0].upper() }}</div>
+            {% endif %}
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;font-size:.95rem;">{{ other.full_name }}</div>
+              <div style="font-size:.78rem;color:var(--text-muted);">
+                {{ other.college or 'Student' }}
+                {% if other.year %} · {{ other.year }}{% endif %}
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:.6rem;flex-shrink:0;">
+              <!-- Direction badge: Sent or Received -->
+              <span class="badge {% if is_sender %}badge-primary{% else %}badge-secondary{% endif %}" style="font-size:.68rem;">
+                {% if is_sender %}<i class="fas fa-paper-plane"></i> Sent{% else %}<i class="fas fa-inbox"></i> Received{% endif %}
+              </span>
+              <span class="status-pill" style="background:var(--warning-light);color:#92400e;">
+                <span class="timeline-dot" style="background:var(--warning);"></span>
+                Pending
+              </span>
+              <span style="font-size:.75rem;color:var(--text-muted);">
+                <i class="fas fa-clock"></i> {{ req.created_at.strftime('%b %d') }}
+              </span>
+            </div>
+          </div>
+
+          <div class="req-card-body">
+            <div class="skill-exchange-arrow">
+              {% if req.skill_offered %}
+                <span class="skill-tag skill-tag-teach" style="font-size:.78rem;">
+                  <i class="fas fa-chalkboard-teacher"></i> Teach: {{ req.skill_offered.name }}
+                </span>
+              {% endif %}
+              {% if req.skill_offered and req.skill_requested %}
+                <i class="fas fa-arrows-alt-h arrow"></i>
+              {% endif %}
+              {% if req.skill_requested %}
+                <span class="skill-tag skill-tag-learn" style="font-size:.78rem;">
+                  <i class="fas fa-graduation-cap"></i> Learn: {{ req.skill_requested.name }}
+                </span>
+              {% endif %}
+            </div>
+            {% if req.message %}
+            <div style="margin-top:.75rem;padding:.75rem;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid var(--primary-light);">
+              <div style="font-size:.76rem;font-weight:700;color:var(--text-muted);margin-bottom:.2rem;text-transform:uppercase;letter-spacing:.05em;">Message</div>
+              <p style="font-size:.87rem;margin:0;font-style:italic;">"{{ req.message[:140] }}{% if req.message|length > 140 %}…{% endif %}"</p>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="req-card-footer">
+            <a href="{{ url_for('profile.view', user_id=other.id) }}" class="btn btn-light btn-sm">
+              <i class="fas fa-user"></i> View Profile
+            </a>
+            <div style="display:flex;gap:.5rem;">
+              {% if is_sender %}
+                <form method="POST" action="{{ url_for('exchanges.cancel', req_id=req.id) }}">
+                  <button type="submit" class="btn btn-danger btn-sm"
+                          data-confirm="Cancel this request?">
+                    <i class="fas fa-times"></i> Cancel
+                  </button>
+                </form>
+              {% else %}
+                <form method="POST" action="{{ url_for('exchanges.reject', req_id=req.id) }}">
+                  <button type="submit" class="btn btn-light btn-sm"
+                          data-confirm="Decline this request?">
+                    <i class="fas fa-times"></i> Decline
+                  </button>
+                </form>
+                <form method="POST" action="{{ url_for('exchanges.accept', req_id=req.id) }}">
+                  <button type="submit" class="btn btn-success btn-sm">
+                    <i class="fas fa-check"></i> Accept
+                  </button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="margin-top:1.5rem;">
+      <div class="empty-icon"><i class="fas fa-inbox"></i></div>
+      <h3>No pending requests</h3>
+      <p>Find students and send an exchange request to get started.</p>
+      <a href="{{ url_for('matching.matches') }}" class="btn btn-primary">
+        <i class="fas fa-magic"></i> Find Matches
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Active tab ──────────────────────────────────────────── -->
+  <div class="tab-pane" data-tab-pane="accepted">
+    {% if accepted %}
+    <div style="display:flex;flex-direction:column;gap:.85rem;">
+      {% for req in accepted %}
+        {% set other = req.receiver if req.sender_id == current_user.id else req.sender %}
+        {% set is_sender = req.sender_id == current_user.id %}
+        <div class="req-card" style="border-left:4px solid var(--success);">
+          <div class="req-card-header">
+            {% if other.profile_photo and other.profile_photo != 'default_avatar.png' %}
+              <img src="{{ url_for('static', filename='uploads/' + other.profile_photo) }}"
+                   class="avatar avatar-sm" alt="avatar"/>
+            {% else %}
+              <div class="avatar-placeholder avatar-sm">{{ other.full_name[0].upper() }}</div>
+            {% endif %}
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;">{{ other.full_name }}</div>
+              <div style="font-size:.78rem;color:var(--text-muted);">{{ other.college or 'Student' }}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;">
+              <span class="badge {% if is_sender %}badge-primary{% else %}badge-secondary{% endif %}" style="font-size:.68rem;">
+                {% if is_sender %}<i class="fas fa-paper-plane"></i> Sent{% else %}<i class="fas fa-inbox"></i> Received{% endif %}
+              </span>
+              <span class="status-pill" style="background:var(--success-light);color:#065f46;">
+                <span class="timeline-dot" style="background:var(--success);animation:pulse 2s infinite;"></span>
+                Active
+              </span>
+            </div>
+          </div>
+
+          <div class="req-card-body">
+            <div class="skill-exchange-arrow">
+              {% if req.skill_offered %}
+                <span class="skill-tag skill-tag-teach" style="font-size:.78rem;">
+                  <i class="fas fa-chalkboard-teacher"></i> Teach: {{ req.skill_offered.name }}
+                </span>
+              {% endif %}
+              {% if req.skill_offered and req.skill_requested %}
+                <i class="fas fa-arrows-alt-h arrow"></i>
+              {% endif %}
+              {% if req.skill_requested %}
+                <span class="skill-tag skill-tag-learn" style="font-size:.78rem;">
+                  <i class="fas fa-graduation-cap"></i> Learn: {{ req.skill_requested.name }}
+                </span>
+              {% endif %}
+            </div>
+            <div style="margin-top:.6rem;font-size:.78rem;color:var(--text-muted);">
+              <i class="fas fa-calendar-check"></i>
+              Accepted on {{ req.updated_at.strftime('%B %d, %Y') }}
+            </div>
+          </div>
+
+          <div class="req-card-footer">
+            <a href="{{ url_for('messages.conversation', user_id=other.id) }}" class="btn btn-primary btn-sm">
+              <i class="fas fa-comments"></i> Message
+            </a>
+            <div style="display:flex;gap:.5rem;">
+              <a href="{{ url_for('profile.view', user_id=other.id) }}" class="btn btn-light btn-sm">
+                <i class="fas fa-user"></i> Profile
+              </a>
+              <form method="POST" action="{{ url_for('exchanges.complete', req_id=req.id) }}">
+                <button type="submit" class="btn btn-success btn-sm"
+                        data-confirm="Mark this exchange as completed?">
+                  <i class="fas fa-check-double"></i> Mark Complete
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="margin-top:1.5rem;">
+      <div class="empty-icon"><i class="fas fa-handshake"></i></div>
+      <h3>No active exchanges</h3>
+      <p>Accept a pending request or send one to a matched student.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Completed tab ───────────────────────────────────────── -->
+  <div class="tab-pane" data-tab-pane="completed">
+    {% if completed %}
+    <div style="display:flex;flex-direction:column;gap:.85rem;">
+      {% for req in completed %}
+        {% set other = req.receiver if req.sender_id == current_user.id else req.sender %}
+        <div class="req-card" style="border-left:4px solid var(--secondary);">
+          <div class="req-card-header">
+            {% if other.profile_photo and other.profile_photo != 'default_avatar.png' %}
+              <img src="{{ url_for('static', filename='uploads/' + other.profile_photo) }}"
+                   class="avatar avatar-sm" alt="avatar"/>
+            {% else %}
+              <div class="avatar-placeholder avatar-sm">{{ other.full_name[0].upper() }}</div>
+            {% endif %}
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;">{{ other.full_name }}</div>
+              <div style="font-size:.78rem;color:var(--text-muted);">{{ other.college or 'Student' }}</div>
+            </div>
+            <span class="status-pill" style="background:var(--info-light);color:#1e40af;">
+              <i class="fas fa-check-double" style="font-size:.72rem;"></i> Completed
+            </span>
+          </div>
+
+          <div class="req-card-body">
+            <div class="skill-exchange-arrow">
+              {% if req.skill_offered %}
+                <span class="skill-tag skill-tag-teach" style="font-size:.78rem;">{{ req.skill_offered.name }}</span>
+              {% endif %}
+              {% if req.skill_offered and req.skill_requested %}
+                <i class="fas fa-exchange-alt arrow"></i>
+              {% endif %}
+              {% if req.skill_requested %}
+                <span class="skill-tag skill-tag-learn" style="font-size:.78rem;">{{ req.skill_requested.name }}</span>
+              {% endif %}
+            </div>
+            <div style="margin-top:.5rem;font-size:.78rem;color:var(--text-muted);">
+              <i class="fas fa-calendar"></i> Completed {{ req.updated_at.strftime('%B %d, %Y') }}
+            </div>
+          </div>
+
+          <div class="req-card-footer">
+            <a href="{{ url_for('profile.view', user_id=other.id) }}" class="btn btn-light btn-sm">
+              <i class="fas fa-user"></i> Profile
+            </a>
+            <a href="{{ url_for('reviews.add', exchange_id=req.id) }}" class="btn btn-warning btn-sm">
+              <i class="fas fa-star"></i> Leave Review
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="margin-top:1.5rem;">
+      <div class="empty-icon"><i class="fas fa-trophy"></i></div>
+      <h3>No completed exchanges yet</h3>
+      <p>Start an active exchange and mark it complete once you're done.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Closed/Rejected tab ────────────────────────────────── -->
+  <div class="tab-pane" data-tab-pane="rejected">
+    {% if closed %}
+    <div style="display:flex;flex-direction:column;gap:.85rem;">
+      {% for req in closed %}
+        {% set other = req.receiver if req.sender_id == current_user.id else req.sender %}
+        <div class="req-card" style="opacity:.75;">
+          <div class="req-card-header">
+            <div class="avatar-placeholder avatar-sm" style="background:var(--border);color:var(--text-muted);">
+              {{ other.full_name[0].upper() }}
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;">{{ other.full_name }}</div>
+              <div style="font-size:.78rem;color:var(--text-muted);">{{ other.college or 'Student' }}</div>
+            </div>
+            <span class="status-pill" style="background:var(--danger-light);color:#991b1b;">
+              <i class="fas fa-times" style="font-size:.72rem;"></i>
+              {{ req.status.title() }}
+            </span>
+          </div>
+          <div class="req-card-footer">
+            <span style="font-size:.78rem;color:var(--text-muted);">
+              <i class="fas fa-calendar"></i> {{ req.updated_at.strftime('%b %d, %Y') }}
+            </span>
+            <a href="{{ url_for('profile.view', user_id=other.id) }}" class="btn btn-light btn-sm">
+              View Profile
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="margin-top:1.5rem;">
+      <div class="empty-icon"><i class="fas fa-check-circle"></i></div>
+      <h3>Nothing here</h3>
+      <p>No cancelled or rejected exchanges.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Pre-activate tab from URL param
+const urlTab = new URLSearchParams(location.search).get('tab') || '{{ tab }}';
+if (urlTab) {
+  document.querySelectorAll('[data-tab]').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === urlTab);
+  });
+  document.querySelectorAll('[data-tab-pane]').forEach(p => {
+    p.classList.toggle('active', p.dataset.tabPane === urlTab);
+  });
+}
+</script>
+{% endblock %}

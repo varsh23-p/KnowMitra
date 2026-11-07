@@ -1,0 +1,263 @@
+{% extends "base_public.html" %}
+{% block title %}Welcome{% endblock %}
+{% block content %}
+
+<!-- ══ Navbar ════════════════════════════════════════════════════ -->
+<nav class="landing-nav" id="landingNav">
+  <div class="nav-logo">
+    <div class="nav-logo-icon"><i class="fas fa-seedling"></i></div>
+    <span class="nav-logo-text">Know<span>Mitra</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="#features"     class="nav-link">Features</a>
+    <a href="#how-it-works" class="nav-link">How It Works</a>
+    <a href="#testimonials" class="nav-link">Reviews</a>
+    <a href="{{ url_for('main.about') }}" class="nav-link">About</a>
+  </div>
+  <div class="nav-actions">
+    <a href="{{ url_for('auth.login') }}"    class="btn btn-outline-white btn-sm">Sign In</a>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-secondary btn-sm">Get Started Free</a>
+  </div>
+  <button class="hamburger-landing" id="navHamburger" aria-label="Menu">
+    <i class="fas fa-bars"></i>
+  </button>
+</nav>
+
+<!-- ══ Hero ══════════════════════════════════════════════════════ -->
+<section class="hero" id="home">
+  <div class="hero-bg-shapes">
+    <div class="hero-shape hero-shape-1"></div>
+    <div class="hero-shape hero-shape-2"></div>
+    <div class="hero-shape hero-shape-3"></div>
+  </div>
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        <span class="hero-badge-text">100% Free for College Students</span>
+      </div>
+      <h1 class="hero-title">
+        Learn Together,<br>
+        <span class="highlight">Grow Together</span>
+      </h1>
+      <p class="hero-desc">
+        KnowMitra connects campus peers to teach what they know and learn what they don't.
+        Trade skills — no money, no tutors, just genuine peer knowledge exchange.
+      </p>
+      <div class="hero-cta">
+        <a href="{{ url_for('auth.register') }}" class="btn btn-secondary btn-xl">
+          <i class="fas fa-rocket"></i> Start Learning Free
+        </a>
+        <a href="#how-it-works" class="btn btn-outline-white btn-xl">
+          <i class="fas fa-play-circle"></i> See How It Works
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div>
+          <div class="hero-stat-num" data-count="{{ total_students }}">{{ total_students }}</div>
+          <div class="hero-stat-lbl">Students Joined</div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,.12);"></div>
+        <div>
+          <div class="hero-stat-num" data-count="{{ total_skills }}">{{ total_skills }}</div>
+          <div class="hero-stat-lbl">Skills Available</div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,.12);"></div>
+        <div>
+          <div class="hero-stat-num" data-count="{{ total_exchanges }}">{{ total_exchanges }}</div>
+          <div class="hero-stat-lbl">Exchanges Done</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-card-float fade-in-up">
+        <div class="hero-card-icon"><i class="fas fa-code" style="color:var(--yellow);"></i></div>
+        <div>
+          <div class="hero-card-title">Python Programming</div>
+          <div class="hero-card-sub">Arjun teaches · 12 learners</div>
+        </div>
+        <span class="hero-card-badge">Expert</span>
+      </div>
+      <div class="hero-card-float fade-in-up" style="transition-delay:.1s;margin-left:2rem;">
+        <div class="hero-card-icon"><i class="fas fa-guitar" style="color:var(--orange);"></i></div>
+        <div>
+          <div class="hero-card-title">Guitar Lessons</div>
+          <div class="hero-card-sub">Priya teaches · 8 learners</div>
+        </div>
+        <span class="hero-card-badge">Intermediate</span>
+      </div>
+      <div class="hero-card-float fade-in-up" style="transition-delay:.2s;">
+        <div class="hero-card-icon"><i class="fas fa-language" style="color:var(--purple);"></i></div>
+        <div>
+          <div class="hero-card-title">Spanish Conversation</div>
+          <div class="hero-card-sub">Maria teaches · 15 learners</div>
+        </div>
+        <span class="hero-card-badge">Fluent</span>
+      </div>
+      <div class="hero-card-float fade-in-up" style="transition-delay:.3s;margin-left:2rem;">
+        <div class="hero-card-icon"><i class="fas fa-chart-bar" style="color:var(--yellow);"></i></div>
+        <div>
+          <div class="hero-card-title">Data Science</div>
+          <div class="hero-card-sub">Rahul teaches · 20 learners</div>
+        </div>
+        <span class="hero-card-badge">Expert</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ Stats strip ═══════════════════════════════════════════════ -->
+<div class="stats-strip">
+  <div class="stats-strip-inner">
+    <div>
+      <div class="strip-num" data-count="{{ total_students }}">{{ total_students }}+</div>
+      <div class="strip-lbl">Active Students</div>
+    </div>
+    <div>
+      <div class="strip-num" data-count="{{ total_skills }}">{{ total_skills }}+</div>
+      <div class="strip-lbl">Skills on Platform</div>
+    </div>
+    <div>
+      <div class="strip-num" data-count="{{ total_exchanges }}">{{ total_exchanges }}+</div>
+      <div class="strip-lbl">Successful Exchanges</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Features ══════════════════════════════════════════════════ -->
+<section class="section section-alt" id="features">
+  <div class="section-header fade-in-up">
+    <div class="section-eyebrow"><i class="fas fa-seedling"></i> Why KnowMitra</div>
+    <h2 class="section-title">Everything You Need to <span class="text-gradient">Exchange Skills</span></h2>
+    <p class="section-subtitle">A complete campus peer-learning platform — teach what you know, learn what you don't, and build real connections.</p>
+  </div>
+  <div class="grid-3" style="max-width:1100px;margin:0 auto;">
+    {% set features = [
+      ('fa-magic','Smart Matching','Our algorithm finds students whose skills align with yours — showing a compatibility score and clear reasons for every match.','primary'),
+      ('fa-user-circle','Rich Profiles','Showcase teaching skills, learning goals, experience level, college info, and collect peer-verified reviews.','primary'),
+      ('fa-handshake','Exchange Requests','Send, accept or reject exchange proposals in seconds. Both students agree before anything starts.','primary'),
+      ('fa-comments','Real-time Chat','Message your exchange partners directly once a request is accepted — with photo sharing and voice notes.','primary'),
+      ('fa-star','Ratings & Reviews','Rate your partner after each exchange. Build a trusted reputation on campus.','primary'),
+      ('fa-chart-line','Progress Dashboard','Track connections, active exchanges, completed swaps and your rating — all in one place.','primary'),
+    ] %}
+    {% for icon, title, desc, color in features %}
+    <div class="feature-card fade-in-up">
+      <div class="feature-icon">
+        <i class="fas {{ icon }}"></i>
+      </div>
+      <h3>{{ title }}</h3>
+      <p>{{ desc }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ══ How It Works ══════════════════════════════════════════════ -->
+<section class="section" id="how-it-works">
+  <div class="section-header fade-in-up">
+    <div class="section-eyebrow"><i class="fas fa-map"></i> Process</div>
+    <h2 class="section-title">Start Learning in <span class="text-gradient">3 Simple Steps</span></h2>
+    <p class="section-subtitle">No setup fees, no complicated forms. Get started in under two minutes.</p>
+  </div>
+  <div class="grid-3" style="max-width:900px;margin:0 auto;">
+    {% for num, icon, title, desc in [
+      ('1','fa-user-plus','Create Your Profile','Sign up free, list the skills you can teach and the ones you want to learn.'),
+      ('2','fa-magic','Get Matched','Our smart algorithm finds compatible campus peers and shows you a match score with reasons.'),
+      ('3','fa-handshake','Exchange & Grow','Send a request, start chatting, teach each other, and leave a review when done.'),
+    ] %}
+    <div class="step-card fade-in-up" style="text-align:center;">
+      <div class="step-num">{{ num }}</div>
+      <div style="width:56px;height:56px;background:var(--primary-light);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.4rem;color:var(--primary);">
+        <i class="fas {{ icon }}"></i>
+      </div>
+      <h3>{{ title }}</h3>
+      <p style="font-size:.92rem;">{{ desc }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ══ Popular Skills ═════════════════════════════════════════════ -->
+{% if popular_skills %}
+<section class="section section-alt">
+  <div class="section-header fade-in-up">
+    <div class="section-eyebrow"><i class="fas fa-fire"></i> Trending</div>
+    <h2 class="section-title">Popular Skills Right Now</h2>
+  </div>
+  <div style="max-width:900px;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:center;gap:.85rem;">
+    {% for skill in popular_skills %}
+    <div style="background:var(--bg-card);border:1.5px solid var(--border-light);border-radius:var(--radius-full);padding:.5rem 1.25rem;display:flex;align-items:center;gap:.6rem;font-size:.9rem;font-weight:600;box-shadow:var(--shadow-card);transition:var(--t);" class="fade-in-up"
+         onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'"
+         onmouseout="this.style.borderColor='var(--border-light)';this.style.color=''">
+      <i class="fas {{ skill.icon }}" style="color:var(--primary);"></i>
+      {{ skill.name }}
+      <span class="badge badge-primary" style="font-size:.68rem;">{{ skill.teachers.count() }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- ══ Testimonials ═══════════════════════════════════════════════ -->
+<section class="section" id="testimonials">
+  <div class="section-header fade-in-up">
+    <div class="section-eyebrow"><i class="fas fa-heart"></i> Student Stories</div>
+    <h2 class="section-title">Loved by Students <span class="text-gradient">Everywhere</span></h2>
+  </div>
+  <div class="grid-3" style="max-width:1100px;margin:0 auto;">
+    {% for quote, name, role, stars in [
+      ("I learned Python in 3 weeks by teaching Priya guitar. Best deal I've ever made — no money involved, just pure knowledge exchange.", "Arjun Sharma", "IIT Bombay · CS 3rd Year", 5),
+      ("KnowMitra connected me with someone who needed exactly what I could teach. The smart matching saved me hours of searching.", "Sneha Iyer", "VIT Vellore · Design 2nd Year", 5),
+      ("The platform is incredibly easy to use. I found a calculus tutor and taught him digital marketing in return. Win-win!", "Meera Krishnan", "PSG College · Business 1st Year", 5),
+    ] %}
+    <div class="testimonial-card fade-in-up">
+      <p class="testimonial-quote">{{ quote }}</p>
+      <div class="testimonial-author">
+        <div class="avatar-placeholder avatar-sm">{{ name[0] }}</div>
+        <div>
+          <div style="font-weight:700;font-size:.92rem;">{{ name }}</div>
+          <div style="font-size:.78rem;color:var(--text-muted);">{{ role }}</div>
+          <div class="stars" style="margin-top:.25rem;">
+            {% for _ in range(stars) %}<i class="fas fa-star star filled"></i>{% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ══ CTA ════════════════════════════════════════════════════════ -->
+<section class="cta-section">
+  <div class="cta-inner fade-in-up">
+    <div class="section-eyebrow" style="justify-content:center;"><i class="fas fa-rocket"></i> Get Started Today</div>
+    <h2 class="cta-title">Ready to Start<br>Learning Together?</h2>
+    <p class="cta-sub">Join thousands of campus students already exchanging skills. It's completely free and always will be.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a href="{{ url_for('auth.register') }}" class="btn btn-secondary btn-xl">
+        <i class="fas fa-user-plus"></i> Create Free Account
+      </a>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-outline-white btn-xl">
+        <i class="fas fa-sign-in-alt"></i> Sign In
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ Footer ═════════════════════════════════════════════════════ -->
+<footer class="landing-footer">
+  <div style="display:flex;align-items:center;justify-content:center;gap:.6rem;margin-bottom:.75rem;">
+    <div style="width:30px;height:30px;background:var(--grad-primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;">
+      <i class="fas fa-seedling"></i>
+    </div>
+    <span style="font-size:1rem;font-weight:700;color:rgba(255,255,255,.6);">KnowMitra</span>
+  </div>
+  <p style="color:rgba(255,255,255,.35);font-size:.85rem;">
+    © 2026 KnowMitra – Campus Peer Learning Platform. Built with <i class="fas fa-heart" style="color:var(--orange);"></i> for students.
+  </p>
+  <p style="font-size:.78rem;color:rgba(255,255,255,.2);margin-top:.35rem;">
+    <em>Learn Together. Grow Together.</em>
+  </p>
+</footer>
+
+{% endblock %}

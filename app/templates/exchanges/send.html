@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Send Request{% endblock %}
+{% block page_title %}Send Exchange Request{% endblock %}
+
+{% block content %}
+<div style="max-width:620px;">
+  <div class="breadcrumb mb-2">
+    <a href="{{ url_for('exchanges.index') }}">Exchanges</a>
+    <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:.65rem;"></i></span>
+    <span>Send Request</span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 style="font-size:1.1rem;margin:0;">
+        <i class="fas fa-paper-plane" style="color:var(--primary);margin-right:.4rem;"></i>
+        Send Exchange Request
+      </h3>
+    </div>
+    <div class="card-body">
+
+      <!-- Receiver info -->
+      <div style="display:flex;align-items:center;gap:1rem;padding:1.1rem;background:var(--primary-lighter);border-radius:var(--radius);border:1px solid var(--primary-light);margin-bottom:1.75rem;">
+        {% if receiver.profile_photo and receiver.profile_photo != 'default_avatar.png' %}
+          <img src="{{ url_for('static', filename='uploads/' + receiver.profile_photo) }}"
+               class="avatar avatar-md" alt="avatar"/>
+        {% else %}
+          <div class="avatar-placeholder avatar-md">{{ receiver.full_name[0].upper() }}</div>
+        {% endif %}
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:800;font-size:1.05rem;">{{ receiver.full_name }}</div>
+          <div style="font-size:.83rem;color:var(--text-muted);">
+            {{ receiver.college or 'Student' }}{% if receiver.year %} · {{ receiver.year }}{% endif %}
+          </div>
+          <div style="display:flex;gap:.15rem;margin-top:.35rem;">
+            {% for i in range(1,6) %}
+              <i class="fas fa-star" style="color:{% if i<=receiver.avg_rating|int %}#f59e0b{% else %}#e2dff5{% endif %};font-size:.82rem;"></i>
+            {% endfor %}
+            <span style="font-size:.76rem;color:var(--text-muted);margin-left:.2rem;">({{ receiver.avg_rating }})</span>
+          </div>
+        </div>
+        <a href="{{ url_for('profile.view', user_id=receiver.id) }}" class="btn btn-light btn-sm">
+          <i class="fas fa-eye"></i> Profile
+        </a>
+      </div>
+
+      <form method="POST" action="{{ url_for('exchanges.send', receiver_id=receiver.id) }}">
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="fas fa-graduation-cap" style="color:var(--secondary);"></i>
+            Skill you want to learn from them
+          </label>
+          <select name="skill_requested" class="form-select">
+            <option value="">Select a skill…</option>
+            {% for skill in their_teaching %}
+              <option value="{{ skill.id }}">{{ skill.name }}</option>
+            {% endfor %}
+          </select>
+          <span class="form-hint">Skills {{ receiver.full_name.split()[0] }} can teach</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="fas fa-chalkboard-teacher" style="color:var(--success);"></i>
+            Skill you offer to teach them
+          </label>
+          <select name="skill_offered" class="form-select">
+            <option value="">Select a skill…</option>
+            {% for skill in my_teaching %}
+              <option value="{{ skill.id }}">{{ skill.name }}</option>
+            {% endfor %}
+          </select>
+          <span class="form-hint">Your teaching skills</span>
+        </div>
+
+        <!-- Visual exchange summary -->
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.85rem 1rem;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:1.25rem;font-size:.85rem;" id="exchangeSummary">
+          <i class="fas fa-info-circle" style="color:var(--primary);flex-shrink:0;"></i>
+          <span style="color:var(--text-muted);">Select skills above to see the exchange summary</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="fas fa-comment" style="color:var(--primary);"></i>
+            Introduction Message <span style="color:var(--text-muted);font-weight:400;">(optional)</span>
+          </label>
+          <textarea name="message" class="form-control" rows="4"
+                    placeholder="Introduce yourself and explain why you'd like to exchange these skills…"
+                    data-maxlength="500" data-count-target="msgCounter"></textarea>
+          <span class="form-hint" id="msgCounter">500 characters remaining</span>
+        </div>
+
+        <div style="display:flex;gap:.75rem;justify-content:flex-end;border-top:1px solid var(--border-light);padding-top:1.25rem;">
+          <a href="{{ url_for('profile.view', user_id=receiver.id) }}" class="btn btn-light">Cancel</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-paper-plane"></i> Send Request
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const skillLearn  = document.querySelector('select[name="skill_requested"]');
+const skillTeach  = document.querySelector('select[name="skill_offered"]');
+const summary     = document.getElementById('exchangeSummary');
+
+function updateSummary() {
+  const learn = skillLearn?.options[skillLearn.selectedIndex]?.text;
+  const teach = skillTeach?.options[skillTeach.selectedIndex]?.text;
+  if (skillLearn?.value && skillTeach?.value) {
+    summary.innerHTML = `
+      <i class="fas fa-exchange-alt" style="color:var(--primary);flex-shrink:0;"></i>
+      <span>You teach <strong>${teach}</strong> &nbsp;↔&nbsp; You learn <strong>${learn}</strong> from {{ receiver.full_name.split()[0] }}</span>`;
+    summary.style.background = 'var(--primary-lighter)';
+    summary.style.border     = '1px solid var(--primary-light)';
+  } else {
+    summary.innerHTML = `<i class="fas fa-info-circle" style="color:var(--primary);flex-shrink:0;"></i><span style="color:var(--text-muted);">Select skills above to see the exchange summary</span>`;
+    summary.style.background = 'var(--bg)';
+    summary.style.border     = 'none';
+  }
+}
+skillLearn?.addEventListener('change', updateSummary);
+skillTeach?.addEventListener('change', updateSummary);
+</script>
+{% endblock %}

@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% block title %}{{ student.full_name }}{% endblock %}
+{% block page_title %}Student Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-tab-content { padding: 1.5rem 0; }
+.info-row {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .75rem 0; border-bottom: 1px solid var(--border-light);
+  font-size: .9rem;
+}
+.info-row:last-child { border-bottom: none; }
+.info-row-icon { width: 32px; height: 32px; border-radius: var(--radius-sm);
+  background: var(--primary-light); color: var(--primary);
+  display: flex; align-items: center; justify-content: center; font-size: .82rem; flex-shrink: 0; }
+.info-row-label { color: var(--text-muted); font-size: .78rem; font-weight: 600; margin-bottom: .1rem; text-transform: uppercase; letter-spacing: .04em; }
+.info-row-value { font-weight: 600; color: var(--text-primary); }
+.review-item { padding: 1.25rem; border-bottom: 1px solid var(--border-light); }
+.review-item:last-child { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:960px;">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb mb-2">
+    <a href="{{ url_for('profile.browse') }}">Discover</a>
+    <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:.65rem;"></i></span>
+    <span>{{ student.full_name }}</span>
+  </div>
+
+  <!-- ── Profile Banner ───────────────────────────────────────── -->
+  <div class="card mb-3">
+    <div class="profile-banner">
+      <!-- Decorative circles -->
+      <div style="position:absolute;top:-30px;right:-30px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.07);"></div>
+      <div style="position:absolute;bottom:-40px;right:120px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.05);"></div>
+    </div>
+
+    <div class="profile-avatar-wrap">
+      {% if student.profile_photo and student.profile_photo != 'default_avatar.png' %}
+        <img src="{{ url_for('static', filename='uploads/' + student.profile_photo) }}"
+             class="avatar avatar-xl" alt="{{ student.full_name }}"
+             data-initials="{{ student.full_name[0].upper() }}"/>
+      {% else %}
+        <div class="avatar-placeholder avatar-xl" style="border:5px solid #fff;box-shadow:var(--shadow);">
+          {{ student.full_name[0].upper() }}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="profile-info">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+        <div>
+          <div class="profile-name">{{ student.full_name }}</div>
+          <div class="profile-meta">
+            {% if student.college %}<span><i class="fas fa-university"></i> {{ student.college }}</span>{% endif %}
+            {% if student.branch  %}<span><i class="fas fa-code-branch"></i> {{ student.branch }}</span>{% endif %}
+            {% if student.year   %}<span><i class="fas fa-graduation-cap"></i> {{ student.year }}</span>{% endif %}
+            <span><i class="fas fa-layer-group"></i> {{ student.experience or 'Beginner' }}</span>
+          </div>
+          <!-- Stars row -->
+          <div style="display:flex;align-items:center;gap:.35rem;margin-top:.6rem;">
+            {% for i in range(1,6) %}
+              <i class="fas fa-star" style="color:{% if i<=student.avg_rating|int %}#f59e0b{% else %}#e2dff5{% endif %};font-size:1rem;"></i>
+            {% endfor %}
+            <span style="font-weight:700;color:var(--text-primary);">{{ student.avg_rating }}</span>
+            <span style="color:var(--text-muted);font-size:.85rem;">({{ student.reviews_received.count() }} review{% if student.reviews_received.count() != 1 %}s{% endif %})</span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex;gap:.65rem;flex-wrap:wrap;">
+          {% if student.id == current_user.id %}
+            <a href="{{ url_for('profile.edit') }}" class="btn btn-primary">
+              <i class="fas fa-edit"></i> Edit Profile
+            </a>
+          {% else %}
+            {% if existing_request %}
+              <span class="badge badge-{{ 'success' if existing_request.status=='accepted' else 'warning' }}"
+                    style="padding:.55rem 1rem;font-size:.88rem;">
+                <i class="fas fa-handshake"></i> {{ existing_request.status.title() }}
+              </span>
+            {% else %}
+              <a href="{{ url_for('exchanges.send', receiver_id=student.id) }}" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i> Send Exchange Request
+              </a>
+            {% endif %}
+            <a href="{{ url_for('reviews.user_reviews', user_id=student.id) }}" class="btn btn-light">
+              <i class="fas fa-star"></i> Reviews
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div style="display:flex;gap:2rem;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border-light);flex-wrap:wrap;">
+        {% for val, lbl, color in [
+          (student.teaching_skills.count(), 'Teaching', 'success'),
+          (student.learning_skills.count(), 'Learning', 'secondary'),
+          (student.total_exchanges,         'Completed','primary'),
+          (student.avg_rating,              'Avg Rating','warning'),
+        ] %}
+        <div>
+          <div style="font-size:1.6rem;font-weight:800;color:var(--{{ color }});">{{ val }}</div>
+          <div style="font-size:.78rem;color:var(--text-muted);margin-top:.1rem;">{{ lbl }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tabs ─────────────────────────────────────────────────── -->
+  <div data-tabs>
+    <div class="tabs-nav">
+      <button class="tab-btn" data-tab="about">   <i class="fas fa-user"></i>     About</button>
+      <button class="tab-btn" data-tab="skills">  <i class="fas fa-cogs"></i>     Skills</button>
+      <button class="tab-btn" data-tab="reviews"> <i class="fas fa-star"></i>     Reviews
+        <span class="tab-count">{{ student.reviews_received.count() }}</span>
+      </button>
+    </div>
+
+    <!-- About tab -->
+    <div class="tab-pane" data-tab-pane="about">
+      <div class="grid-2" style="gap:1.25rem;">
+        <div class="card">
+          <div class="card-header"><h4 style="font-size:.95rem;"><i class="fas fa-id-card" style="color:var(--primary);"></i> About</h4></div>
+          <div class="card-body">
+            {% if student.bio %}
+              <p style="line-height:1.75;font-size:.93rem;">{{ student.bio }}</p>
+            {% else %}
+              <p class="text-muted" style="font-style:italic;">No bio added yet.</p>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h4 style="font-size:.95rem;"><i class="fas fa-info-circle" style="color:var(--secondary);"></i> Details</h4></div>
+          <div class="card-body" style="padding:1rem 1.25rem;">
+            {% for icon, label, value in [
+              ('fa-university',    'College',    student.college or '—'),
+              ('fa-code-branch',   'Branch',     student.branch  or '—'),
+              ('fa-graduation-cap','Year',       student.year    or '—'),
+              ('fa-signal',        'Experience', student.experience or 'Beginner'),
+              ('fa-calendar',      'Joined',     student.created_at.strftime('%B %Y')),
+            ] %}
+            <div class="info-row">
+              <div class="info-row-icon"><i class="fas {{ icon }}"></i></div>
+              <div>
+                <div class="info-row-label">{{ label }}</div>
+                <div class="info-row-value">{{ value }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skills tab -->
+    <div class="tab-pane" data-tab-pane="skills">
+      <div class="grid-2" style="gap:1.25rem;">
+        <div class="card">
+          <div class="card-header">
+            <h4 style="font-size:.95rem;"><i class="fas fa-chalkboard-teacher" style="color:var(--success);"></i> Can Teach</h4>
+            <span class="badge badge-success">{{ student.teaching_skills.count() }} skills</span>
+          </div>
+          <div class="card-body">
+            {% if student.teaching_skills.all() %}
+              <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+                {% for skill in student.teaching_skills %}
+                  <span class="skill-tag skill-tag-teach">
+                    <i class="fas {{ skill.icon }}"></i> {{ skill.name }}
+                  </span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-muted" style="font-style:italic;font-size:.9rem;">No teaching skills listed yet.</p>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h4 style="font-size:.95rem;"><i class="fas fa-book-open" style="color:var(--secondary);"></i> Wants to Learn</h4>
+            <span class="badge badge-secondary">{{ student.learning_skills.count() }} skills</span>
+          </div>
+          <div class="card-body">
+            {% if student.learning_skills.all() %}
+              <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+                {% for skill in student.learning_skills %}
+                  <span class="skill-tag skill-tag-learn">
+                    <i class="fas {{ skill.icon }}"></i> {{ skill.name }}
+                  </span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-muted" style="font-style:italic;font-size:.9rem;">No learning goals listed yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reviews tab -->
+    <div class="tab-pane" data-tab-pane="reviews">
+      <div class="card">
+        {% if reviews %}
+          <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:1.5rem;">
+            <div style="text-align:center;">
+              <div style="font-size:3rem;font-weight:900;color:var(--text-primary);line-height:1;">{{ student.avg_rating }}</div>
+              <div style="display:flex;gap:.15rem;justify-content:center;margin:.3rem 0;">
+                {% for i in range(1,6) %}
+                  <i class="fas fa-star" style="color:{% if i<=student.avg_rating|int %}#f59e0b{% else %}#e2dff5{% endif %};"></i>
+                {% endfor %}
+              </div>
+              <div style="font-size:.78rem;color:var(--text-muted);">{{ reviews|length }} review{% if reviews|length != 1 %}s{% endif %}</div>
+            </div>
+          </div>
+          {% for review in reviews %}
+          <div class="review-item">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;flex-wrap:wrap;gap:.5rem;">
+              <div style="display:flex;align-items:center;gap:.75rem;">
+                <div class="avatar-placeholder avatar-sm">{{ review.reviewer.full_name[0].upper() }}</div>
+                <div>
+                  <div style="font-weight:700;font-size:.9rem;">{{ review.reviewer.full_name }}</div>
+                  <div style="font-size:.75rem;color:var(--text-muted);">{{ review.created_at.strftime('%B %d, %Y') }}</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:.15rem;">
+                {% for i in range(1,6) %}
+                  <i class="fas fa-star" style="color:{% if i<=review.rating %}#f59e0b{% else %}#e2dff5{% endif %};font-size:.9rem;"></i>
+                {% endfor %}
+              </div>
+            </div>
+            {% if review.feedback %}
+              <p style="font-size:.9rem;margin:0;line-height:1.6;">{{ review.feedback }}</p>
+            {% else %}
+              <p style="font-size:.88rem;color:var(--text-muted);font-style:italic;margin:0;">No written feedback.</p>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fas fa-star"></i></div>
+            <h3>No reviews yet</h3>
+            <p>Complete an exchange with {{ student.full_name.split()[0] }} to leave a review.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

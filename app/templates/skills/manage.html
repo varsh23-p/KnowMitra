@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% block title %}My Skills{% endblock %}
+{% block page_title %}My Skills{% endblock %}
+
+{% block extra_css %}
+<style>
+.skills-hero {
+  background: var(--grad-primary);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+.skills-hero::after {
+  content: '';
+  position: absolute; right: -50px; top: -50px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.07);
+}
+.skills-hero h2 { color: #fff; font-size: 1.4rem; margin-bottom: .3rem; }
+.skills-hero p  { color: rgba(255,255,255,.7); font-size: .88rem; }
+
+.skill-list-item {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  padding: .85rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  transition: var(--t-fast);
+}
+.skill-list-item:hover { border-color: var(--primary-light); background: var(--primary-lighter); }
+.skill-list-icon {
+  width: 38px; height: 38px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .95rem;
+  flex-shrink: 0;
+}
+.add-panel {
+  position: sticky;
+  top: calc(var(--topbar-h) + 1.25rem);
+}
+.category-section { margin-bottom: 1.25rem; }
+.category-section-title {
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-muted);
+  margin-bottom: .6rem;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div class="skills-hero">
+  <div style="position:relative;z-index:1;">
+    <h2><i class="fas fa-cogs" style="margin-right:.5rem;opacity:.8;"></i>My Skills</h2>
+    <p>Manage the skills you can teach and the ones you want to learn</p>
+  </div>
+  <div style="display:flex;gap:.75rem;position:relative;z-index:1;">
+    <div style="text-align:center;background:rgba(255,255,255,.1);border-radius:var(--radius-sm);padding:.65rem 1.1rem;">
+      <div style="font-size:1.4rem;font-weight:800;color:#fff;">{{ teaching_skills|length }}</div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.65);">Teaching</div>
+    </div>
+    <div style="text-align:center;background:rgba(255,255,255,.1);border-radius:var(--radius-sm);padding:.65rem 1.1rem;">
+      <div style="font-size:1.4rem;font-weight:800;color:#fff;">{{ learning_skills|length }}</div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.65);">Learning</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 360px;gap:1.5rem;align-items:start;">
+
+  <!-- ── Left: Current Skills ──────────────────────────────── -->
+  <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+    <!-- Teaching skills -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h4 style="font-size:.95rem;margin:0;">
+            <i class="fas fa-chalkboard-teacher" style="color:var(--success);margin-right:.4rem;"></i>
+            Skills I Can Teach
+          </h4>
+          <div style="font-size:.78rem;color:var(--text-muted);margin-top:.1rem;">Students can request to learn these from you</div>
+        </div>
+        <span class="badge badge-success">{{ teaching_skills|length }}</span>
+      </div>
+      <div class="card-body" style="padding:1rem;">
+        {% if teaching_skills %}
+        <div style="display:flex;flex-direction:column;gap:.55rem;">
+          {% for skill in teaching_skills %}
+          <div class="skill-list-item">
+            <div class="skill-list-icon" style="background:var(--success-light);color:var(--success);">
+              <i class="fas {{ skill.icon }}"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;font-size:.9rem;">{{ skill.name }}</div>
+              <div style="font-size:.76rem;color:var(--text-muted);">{{ skill.category }}</div>
+            </div>
+            <span class="badge badge-success" style="font-size:.72rem;" id="prof-badge-{{ skill.id }}">
+              {{ teaching_proficiency.get(skill.id, 'Intermediate') }}
+            </span>
+            <!-- Edit proficiency (inline) -->
+            <form method="POST" action="{{ url_for('skills.manage') }}" style="margin:0;display:none;" id="prof-form-{{ skill.id }}">
+              <input type="hidden" name="action" value="edit_proficiency"/>
+              <input type="hidden" name="skill_id" value="{{ skill.id }}"/>
+              <select name="proficiency" class="form-select" style="width:auto;font-size:.78rem;padding:.25rem .6rem;height:30px;">
+                {% for lvl in proficiency_levels %}
+                  <option value="{{ lvl }}" {{ 'selected' if teaching_proficiency.get(skill.id, 'Intermediate') == lvl }}>{{ lvl }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-success btn-sm" style="padding:.2rem .5rem;font-size:.72rem;height:30px;">Save</button>
+            </form>
+            <!-- Toggle edit button -->
+            <button onclick="var b=document.getElementById('prof-badge-{{ skill.id }}'),f=document.getElementById('prof-form-{{ skill.id }}');b.style.display='none';f.style.display='inline-flex';this.style.display='none';"
+                    class="btn btn-sm" style="background:var(--primary-light);color:var(--primary);border:none;width:30px;height:30px;padding:0;border-radius:var(--radius-xs);" title="Edit proficiency">
+              <i class="fas fa-pen" style="font-size:.7rem;"></i>
+            </button>
+            <!-- Remove form -->
+            <form method="POST" action="{{ url_for('skills.manage') }}" style="margin:0;">
+              <input type="hidden" name="action"   value="remove_teaching"/>
+              <input type="hidden" name="skill_id" value="{{ skill.id }}"/>
+              <button type="submit" class="btn btn-sm"
+                      style="background:var(--danger-light);color:var(--danger);border:none;width:32px;height:32px;padding:0;border-radius:var(--radius-xs);"
+                      data-confirm="Remove '{{ skill.name }}' from your teaching list?"
+                      title="Remove">
+                <i class="fas fa-times" style="font-size:.78rem;"></i>
+              </button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding:1.5rem 0;">
+          <div class="empty-icon" style="width:60px;height:60px;font-size:1.4rem;"><i class="fas fa-chalkboard-teacher"></i></div>
+          <h3 style="font-size:1rem;">No teaching skills yet</h3>
+          <p style="font-size:.85rem;">Add skills from the panel on the right.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Learning skills -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h4 style="font-size:.95rem;margin:0;">
+            <i class="fas fa-book-open" style="color:var(--secondary);margin-right:.4rem;"></i>
+            Skills I Want to Learn
+          </h4>
+          <div style="font-size:.78rem;color:var(--text-muted);margin-top:.1rem;">Used to match you with students who can teach these</div>
+        </div>
+        <span class="badge badge-secondary">{{ learning_skills|length }}</span>
+      </div>
+      <div class="card-body" style="padding:1rem;">
+        {% if learning_skills %}
+        <div style="display:flex;flex-wrap:wrap;gap:.55rem;">
+          {% for skill in learning_skills %}
+          <div style="display:inline-flex;align-items:center;gap:.5rem;background:var(--secondary-light);border:1.5px solid rgba(59,130,246,.2);border-radius:99px;padding:.32rem .85rem;">
+            <i class="fas {{ skill.icon }}" style="color:var(--secondary);font-size:.8rem;"></i>
+            <span style="font-size:.82rem;font-weight:600;color:var(--secondary-dark);">{{ skill.name }}</span>
+            <form method="POST" action="{{ url_for('skills.manage') }}" style="display:inline;margin:0;">
+              <input type="hidden" name="action"   value="remove_learning"/>
+              <input type="hidden" name="skill_id" value="{{ skill.id }}"/>
+              <button type="submit" style="background:none;border:none;color:var(--secondary-dark);cursor:pointer;font-size:.8rem;padding:0;line-height:1;opacity:.6;"
+                      data-confirm="Remove '{{ skill.name }}' from learning goals?"
+                      title="Remove">
+                <i class="fas fa-times"></i>
+              </button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding:1.5rem 0;">
+          <div class="empty-icon" style="width:60px;height:60px;font-size:1.4rem;background:var(--secondary-light);color:var(--secondary);"><i class="fas fa-book-open"></i></div>
+          <h3 style="font-size:1rem;">No learning goals yet</h3>
+          <p style="font-size:.85rem;">Tell us what you want to learn to get matched.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Skill Library link -->
+    <div class="card" style="background:var(--primary-lighter);border-color:var(--primary-light);">
+      <div class="card-body" style="display:flex;align-items:center;gap:1rem;padding:1.1rem 1.25rem;">
+        <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">
+          <i class="fas fa-layer-group"></i>
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:.92rem;">Browse the Skill Library</div>
+          <div style="font-size:.8rem;color:var(--text-muted);">Explore all {{ all_skills|length }} skills available on the platform</div>
+        </div>
+        <a href="{{ url_for('skills.index') }}" class="btn btn-ghost btn-sm">Browse <i class="fas fa-arrow-right" style="font-size:.75rem;"></i></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Right: Add Panels ────────────────────────────────── -->
+  <div class="add-panel" style="display:flex;flex-direction:column;gap:1.25rem;">
+
+    <!-- Add teaching skill -->
+    <div class="card">
+      <div class="card-header" style="background:linear-gradient(135deg,rgba(16,185,129,.06),rgba(16,185,129,.02));">
+        <h4 style="font-size:.92rem;margin:0;color:var(--success);">
+          <i class="fas fa-plus-circle"></i> Add Teaching Skill
+        </h4>
+      </div>
+      <div class="card-body" style="padding:1.1rem;">
+        <form method="POST" action="{{ url_for('skills.manage') }}">
+          <input type="hidden" name="action" value="add_teaching"/>
+          <input type="hidden" id="skillIdHidden" name="skill_id"/>
+          <div class="form-group">
+            <label class="form-label" style="font-size:.8rem;">Search Skill</label>
+            <div class="skill-suggest-wrap">
+              <input type="text" id="skillSearchInput" class="form-control"
+                     placeholder="Type to search…" autocomplete="off"/>
+              <div id="skillSearchResults" class="hidden"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size:.8rem;">Your Proficiency</label>
+            <select name="proficiency" class="form-select">
+              {% for lvl in proficiency_levels %}
+                <option value="{{ lvl }}">{{ lvl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-success btn-block btn-sm">
+            <i class="fas fa-chalkboard-teacher"></i> Add Teaching Skill
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Add learning skill -->
+    <div class="card">
+      <div class="card-header" style="background:linear-gradient(135deg,rgba(59,130,246,.06),rgba(59,130,246,.02));">
+        <h4 style="font-size:.92rem;margin:0;color:var(--secondary);">
+          <i class="fas fa-plus-circle"></i> Add Learning Goal
+        </h4>
+      </div>
+      <div class="card-body" style="padding:1.1rem;">
+        <form method="POST" action="{{ url_for('skills.manage') }}">
+          <input type="hidden" name="action" value="add_learning"/>
+          <div class="form-group">
+            <label class="form-label" style="font-size:.8rem;">Choose a Skill</label>
+            <select name="skill_id" class="form-select">
+              <option value="">Select skill…</option>
+              {% for cat, icon in categories %}
+                <optgroup label="{{ cat }}">
+                  {% for skill in all_skills if skill.category == cat %}
+                    <option value="{{ skill.id }}">{{ skill.name }}</option>
+                  {% endfor %}
+                </optgroup>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-secondary btn-block btn-sm">
+            <i class="fas fa-book-open"></i> Add Learning Goal
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Create new skill -->
+    <div class="card">
+      <div class="card-header" style="background:linear-gradient(135deg,rgba(245,158,11,.06),rgba(245,158,11,.02));">
+        <h4 style="font-size:.92rem;margin:0;color:var(--warning);">
+          <i class="fas fa-lightbulb"></i> Create New Skill
+        </h4>
+      </div>
+      <div class="card-body" style="padding:1.1rem;">
+        <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.85rem;">Can't find your skill? Add it to the platform for everyone to use.</p>
+        <form method="POST" action="{{ url_for('skills.manage') }}">
+          <input type="hidden" name="action" value="create_skill"/>
+          <div class="form-group">
+            <label class="form-label" style="font-size:.8rem;">Skill Name <span class="required">*</span></label>
+            <input type="text" name="skill_name" class="form-control" placeholder="e.g. Machine Learning" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size:.8rem;">Category</label>
+            <select name="category" class="form-select">
+              {% for cat, icon in categories %}
+                <option value="{{ cat }}">{{ cat }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size:.8rem;">Description</label>
+            <input type="text" name="description" class="form-control" placeholder="Brief description (optional)"/>
+          </div>
+          <button type="submit" class="btn btn-warning btn-block btn-sm">
+            <i class="fas fa-plus"></i> Create Skill
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

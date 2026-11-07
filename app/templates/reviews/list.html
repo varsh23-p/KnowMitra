@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}Reviews – {{ student.full_name }}{% endblock %}
+{% block page_title %}Reviews{% endblock %}
+
+{% block extra_css %}
+<style>
+.reviews-hero {
+  background: var(--grad-primary);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  flex-wrap: wrap;
+}
+.reviews-hero::after {
+  content: '';
+  position: absolute; right: -50px; top: -50px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.07);
+}
+.rating-big { font-size: 4rem; font-weight: 900; color: #fff; line-height: 1; }
+.rating-stars-lg { display: flex; gap: .2rem; margin: .4rem 0; }
+.rating-stars-lg i { font-size: 1.4rem; }
+.rating-count-lg { font-size: .85rem; color: rgba(255,255,255,.65); }
+
+/* Rating breakdown bars */
+.breakdown-row { display: flex; align-items: center; gap: .75rem; margin-bottom: .45rem; }
+.breakdown-label { font-size: .82rem; font-weight: 600; color: var(--text-secondary); width: 40px; flex-shrink: 0; display: flex; align-items: center; gap: .2rem; }
+.breakdown-bar-wrap { flex: 1; background: var(--border-light); border-radius: 99px; height: 8px; overflow: hidden; }
+.breakdown-bar { height: 100%; border-radius: 99px; background: #f59e0b; transition: width .8s ease; }
+.breakdown-count { font-size: .78rem; color: var(--text-muted); width: 24px; text-align: right; flex-shrink: 0; }
+
+/* Review card */
+.review-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-card);
+  padding: 1.35rem 1.5rem;
+  transition: var(--t);
+}
+.review-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.review-quote {
+  font-size: .93rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin: .75rem 0 0;
+  position: relative;
+  padding-left: 1.1rem;
+}
+.review-quote::before {
+  content: '"';
+  position: absolute;
+  left: 0; top: -.1rem;
+  font-size: 1.8rem;
+  color: var(--primary-light);
+  font-weight: 900;
+  line-height: 1;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:780px;">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb mb-2">
+    <a href="{{ url_for('profile.view', user_id=student.id) }}">{{ student.full_name }}</a>
+    <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:.65rem;"></i></span>
+    <span>Reviews</span>
+  </div>
+
+  <!-- ── Hero: rating summary ──────────────────────────────────── -->
+  <div class="reviews-hero">
+    <div style="text-align:center;position:relative;z-index:1;">
+      <div class="rating-big">{{ student.avg_rating }}</div>
+      <div class="rating-stars-lg">
+        {% for i in range(1,6) %}
+          <i class="fas fa-star" style="color:{% if i<=student.avg_rating|int %}#f59e0b{% elif i-1 < student.avg_rating %}rgba(245,158,11,.4){% else %}rgba(255,255,255,.2){% endif %};"></i>
+        {% endfor %}
+      </div>
+      <div class="rating-count-lg">
+        Based on {{ reviews|length }} review{% if reviews|length != 1 %}s{% endif %}
+      </div>
+    </div>
+
+    <!-- Breakdown bars -->
+    <div style="flex:1;min-width:200px;position:relative;z-index:1;">
+      {% for star in [5,4,3,2,1] %}
+        {% set count = reviews | selectattr('rating', 'equalto', star) | list | length %}
+        {% set pct   = ((count / reviews|length * 100) | round | int) if reviews else 0 %}
+        <div class="breakdown-row">
+          <div class="breakdown-label">
+            {{ star }}<i class="fas fa-star" style="color:#f59e0b;font-size:.7rem;"></i>
+          </div>
+          <div class="breakdown-bar-wrap">
+            <div class="breakdown-bar" style="width:{{ pct }}%;"></div>
+          </div>
+          <div class="breakdown-count">{{ count }}</div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Reviewed student avatar -->
+    <div style="position:relative;z-index:1;text-align:center;">
+      {% if student.profile_photo and student.profile_photo != 'default_avatar.png' %}
+        <img src="{{ url_for('static', filename='uploads/' + student.profile_photo) }}"
+             class="avatar avatar-lg" style="border:4px solid rgba(255,255,255,.3);" alt="avatar"/>
+      {% else %}
+        <div class="avatar-placeholder avatar-lg" style="border:4px solid rgba(255,255,255,.3);">
+          {{ student.full_name[0].upper() }}
+        </div>
+      {% endif %}
+      <div style="color:#fff;font-weight:700;font-size:.88rem;margin-top:.5rem;">{{ student.full_name.split()[0] }}</div>
+    </div>
+  </div>
+
+  <!-- Actions row -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem;">
+    <div style="font-size:.88rem;color:var(--text-muted);">
+      <strong style="color:var(--text-primary);">{{ reviews|length }}</strong>
+      review{% if reviews|length != 1 %}s{% endif %} total
+    </div>
+    <a href="{{ url_for('profile.view', user_id=student.id) }}" class="btn btn-light btn-sm">
+      <i class="fas fa-arrow-left"></i> Back to Profile
+    </a>
+  </div>
+
+  <!-- ── Review Cards ──────────────────────────────────────────── -->
+  {% if reviews %}
+  <div style="display:flex;flex-direction:column;gap:.85rem;">
+    {% for review in reviews %}
+    <div class="review-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <!-- Reviewer info -->
+        <div style="display:flex;align-items:center;gap:.85rem;">
+          {% if review.reviewer.profile_photo and review.reviewer.profile_photo != 'default_avatar.png' %}
+            <img src="{{ url_for('static', filename='uploads/' + review.reviewer.profile_photo) }}"
+                 class="avatar avatar-sm" alt="{{ review.reviewer.full_name }}"
+                 data-initials="{{ review.reviewer.full_name[0].upper() }}"/>
+          {% else %}
+            <div class="avatar-placeholder avatar-sm">{{ review.reviewer.full_name[0].upper() }}</div>
+          {% endif %}
+          <div>
+            <div style="font-weight:700;font-size:.93rem;">{{ review.reviewer.full_name }}</div>
+            <div style="font-size:.77rem;color:var(--text-muted);">
+              {{ review.reviewer.college or 'Student' }}
+              <span style="margin:0 .3rem;">·</span>
+              {{ review.created_at.strftime('%B %d, %Y') }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Stars -->
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;">
+          <div style="display:flex;gap:.12rem;">
+            {% for i in range(1,6) %}
+              <i class="fas fa-star" style="color:{% if i<=review.rating %}#f59e0b{% else %}#e2dff5{% endif %};font-size:1.05rem;"></i>
+            {% endfor %}
+          </div>
+          <span class="badge {% if review.rating >= 4 %}badge-success{% elif review.rating == 3 %}badge-secondary{% else %}badge-danger{% endif %}" style="font-size:.72rem;">
+            {% if review.rating == 5 %}Excellent
+            {% elif review.rating == 4 %}Great
+            {% elif review.rating == 3 %}Good
+            {% elif review.rating == 2 %}Fair
+            {% else %}Poor{% endif %}
+          </span>
+        </div>
+      </div>
+
+      <!-- Exchange skills context -->
+      {% if review.exchange and (review.exchange.skill_offered or review.exchange.skill_requested) %}
+      <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin:.75rem 0 .2rem;">
+        {% if review.exchange.skill_offered %}
+          <span class="skill-tag skill-tag-teach" style="font-size:.72rem;">{{ review.exchange.skill_offered.name }}</span>
+        {% endif %}
+        {% if review.exchange.skill_requested %}
+          <span class="skill-tag skill-tag-learn" style="font-size:.72rem;">{{ review.exchange.skill_requested.name }}</span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Feedback text -->
+      {% if review.feedback %}
+        <p class="review-quote">{{ review.feedback }}</p>
+      {% else %}
+        <p style="font-size:.85rem;color:var(--text-muted);font-style:italic;margin-top:.6rem;">
+          No written feedback provided.
+        </p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="fas fa-star"></i></div>
+    <h3>No reviews yet</h3>
+    <p>{{ student.full_name.split()[0] }} hasn't received any reviews yet. Complete an exchange to be the first!</p>
+    <a href="{{ url_for('profile.view', user_id=student.id) }}" class="btn btn-primary">
+      <i class="fas fa-user"></i> View Profile
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

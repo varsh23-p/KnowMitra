@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+{% block title %}Messages{% endblock %}
+{% block page_title %}Messages{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Messages page layout ──────────────────────────────────────── */
+.messages-page {
+  max-width: 900px;
+}
+
+/* Header row */
+.msg-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+.msg-page-header h1 { font-size: 1.55rem; margin: 0; }
+.msg-page-header p  { color: var(--text-muted); font-size: .9rem; margin: .2rem 0 0; }
+
+/* Conversation list card */
+.conv-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+}
+.conv-card-header {
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+}
+.conv-card-header h3 {
+  font-size: .95rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+/* Search bar */
+.conv-search-wrap {
+  padding: .85rem 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+  position: relative;
+}
+.conv-search-wrap input {
+  width: 100%;
+  padding: .55rem 1rem .55rem 2.6rem;
+  border: 1.5px solid var(--border);
+  border-radius: 99px;
+  font-size: .87rem;
+  background: var(--bg);
+  outline: none;
+  transition: var(--t-fast);
+  color: var(--text-primary);
+}
+.conv-search-wrap input:focus {
+  border-color: var(--primary);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(108,71,255,.08);
+}
+.conv-search-wrap .search-icon {
+  position: absolute;
+  left: 2.4rem; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: .85rem;
+  pointer-events: none;
+}
+
+/* Individual conversation row */
+.conv-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid var(--border-light);
+  transition: var(--t-fast);
+  position: relative;
+}
+.conv-row:last-child { border-bottom: none; }
+.conv-row:hover {
+  background: var(--primary-lighter);
+}
+.conv-row.has-unread {
+  background: var(--primary-lighter);
+}
+.conv-row.has-unread .conv-row-name {
+  font-weight: 800;
+  color: var(--text-primary);
+}
+.conv-row.has-unread .conv-row-preview {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.conv-row-avatar { flex-shrink: 0; }
+.conv-row-body   { flex: 1; min-width: 0; }
+.conv-row-name   {
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: .15rem;
+}
+.conv-row-preview {
+  font-size: .83rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.conv-row-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .35rem;
+  flex-shrink: 0;
+  min-width: 48px;
+}
+.conv-row-time {
+  font-size: .74rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.conv-row-badge {
+  background: var(--primary);
+  color: #fff;
+  font-size: .68rem;
+  font-weight: 800;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+}
+
+/* Arrow indicator */
+.conv-row::after {
+  content: '\f054';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  position: absolute;
+  right: 1.5rem;
+  color: var(--text-muted);
+  font-size: .75rem;
+  opacity: 0;
+  transition: var(--t-fast);
+}
+.conv-row:hover::after { opacity: .5; }
+
+/* Empty state */
+.conv-empty {
+  padding: 3.5rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .75rem;
+}
+.conv-empty-icon {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 2rem;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: .5rem;
+}
+.conv-empty h3 { font-size: 1.15rem; margin: 0; }
+.conv-empty p  { color: var(--text-muted); font-size: .9rem; max-width: 340px; margin: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="messages-page">
+
+  <!-- Page header -->
+  <div class="msg-page-header">
+    <div>
+      <h1><i class="fas fa-comments" style="color:var(--primary);margin-right:.5rem;"></i>Messages</h1>
+      <p>Your conversations with exchange partners</p>
+    </div>
+    {% if total_unread > 0 %}
+      <span class="badge badge-danger" style="font-size:.85rem;padding:.4rem .9rem;">
+        <i class="fas fa-bell"></i> {{ total_unread }} unread
+      </span>
+    {% endif %}
+  </div>
+
+  <!-- Conversation list card -->
+  <div class="conv-card">
+
+    <!-- Card header -->
+    <div class="conv-card-header">
+      <h3>
+        <i class="fas fa-inbox" style="color:var(--primary);"></i>
+        All Conversations
+      </h3>
+      {% if conversations %}
+        <span class="badge badge-primary" style="font-size:.8rem;">
+          {{ conversations|length }} conversation{{ 's' if conversations|length != 1 }}
+        </span>
+      {% endif %}
+    </div>
+
+    <!-- Search bar (only shown when there are conversations) -->
+    {% if conversations %}
+    <div class="conv-search-wrap">
+      <i class="fas fa-search search-icon"></i>
+      <input type="text"
+             id="convSearchInput"
+             placeholder="Search by name…"
+             autocomplete="off" />
+    </div>
+    {% endif %}
+
+    <!-- Conversation list OR empty state -->
+    {% if conversations %}
+
+      <div id="convListContainer">
+        {% for conv in conversations %}
+        <a href="{{ url_for('messages.conversation', user_id=conv.partner.id) }}"
+           class="conv-row {{ 'has-unread' if conv.unread > 0 }}"
+           data-name="{{ conv.partner.full_name | lower }}"
+           id="conv-{{ conv.partner.id }}">
+
+          <!-- Avatar -->
+          <div class="conv-row-avatar">
+            {% if conv.partner.profile_photo and conv.partner.profile_photo != 'default_avatar.png' %}
+              <img src="{{ url_for('static', filename='uploads/' + conv.partner.profile_photo) }}"
+                   class="avatar avatar-md"
+                   alt="{{ conv.partner.full_name }}"
+                   data-initials="{{ conv.partner.full_name[0].upper() }}" />
+            {% else %}
+              <div class="avatar-placeholder avatar-md"
+                   style="background:linear-gradient(135deg,var(--primary),var(--secondary));">
+                {{ conv.partner.full_name[0].upper() }}
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Body: name + preview -->
+          <div class="conv-row-body">
+            <div class="conv-row-name">{{ conv.partner.full_name }}</div>
+            <div class="conv-row-preview">
+              {% if conv.last_msg.sender_id == current_user.id %}
+                <span style="color:var(--text-muted);font-style:italic;">You: </span>
+              {% endif %}
+              {{ conv.last_msg.content | truncate(55, True, '…') }}
+            </div>
+            {% if conv.partner.college %}
+              <div style="font-size:.75rem;color:var(--text-muted);margin-top:.15rem;">
+                <i class="fas fa-university" style="font-size:.65rem;"></i>
+                {{ conv.partner.college }}
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Meta: time + unread badge -->
+          <div class="conv-row-meta">
+            <span class="conv-row-time">{{ conv.last_msg_time }}</span>
+            {% if conv.unread > 0 %}
+              <span class="conv-row-badge">{{ conv.unread }}</span>
+            {% endif %}
+          </div>
+
+        </a>
+        {% endfor %}
+      </div>
+
+      <!-- No results after search -->
+      <div id="noSearchResults" style="display:none;padding:2rem;text-align:center;color:var(--text-muted);font-size:.9rem;">
+        <i class="fas fa-search" style="font-size:1.5rem;opacity:.35;display:block;margin-bottom:.75rem;"></i>
+        No conversations match your search.
+      </div>
+
+    {% else %}
+
+      <!-- True empty state — no messages at all -->
+      <div class="conv-empty">
+        <div class="conv-empty-icon">
+          <i class="fas fa-comments"></i>
+        </div>
+        <h3>No conversations yet</h3>
+        <p>
+          You can message students once you have an accepted exchange request with them.
+          Find a match and send a request to get started!
+        </p>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center;margin-top:.5rem;">
+          <a href="{{ url_for('matching.matches') }}" class="btn btn-primary">
+            <i class="fas fa-magic"></i> Find Matches
+          </a>
+          <a href="{{ url_for('exchanges.index', tab='accepted') }}" class="btn btn-ghost">
+            <i class="fas fa-handshake"></i> Active Exchanges
+          </a>
+        </div>
+      </div>
+
+    {% endif %}
+
+  </div><!-- /conv-card -->
+
+</div><!-- /messages-page -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const searchInput  = document.getElementById('convSearchInput');
+  const container    = document.getElementById('convListContainer');
+  const noResults    = document.getElementById('noSearchResults');
+
+  if (!searchInput || !container) return;
+
+  searchInput.addEventListener('input', function () {
+    const q     = this.value.trim().toLowerCase();
+    const rows  = container.querySelectorAll('.conv-row[data-name]');
+    let   shown = 0;
+
+    rows.forEach(function (row) {
+      const match = !q || row.dataset.name.includes(q);
+      row.style.display = match ? '' : 'none';
+      if (match) shown++;
+    });
+
+    if (noResults) {
+      noResults.style.display = (shown === 0 && q) ? '' : 'none';
+    }
+  });
+
+  /* Clear search when Escape is pressed */
+  searchInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      this.value = '';
+      this.dispatchEvent(new Event('input'));
+      this.blur();
+    }
+  });
+})();
+</script>
+{% endblock %}

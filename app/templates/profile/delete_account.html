@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Delete Account{% endblock %}
+{% block page_title %}Account Settings{% endblock %}
+
+{% block extra_css %}
+<style>
+.danger-zone {
+  background: var(--danger-light);
+  border: 2px solid var(--danger);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  max-width: 600px;
+}
+.danger-zone-header {
+  display: flex; align-items: center; gap: .85rem; margin-bottom: 1.25rem;
+}
+.danger-zone-icon {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--danger); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.35rem; flex-shrink: 0;
+}
+.danger-zone h2 { color: #991b1b; font-size: 1.25rem; margin: 0; }
+.consequences-list {
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.2);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
+  margin: 1.1rem 0;
+}
+.consequences-list li {
+  font-size: .88rem;
+  color: #7f1d1d;
+  padding: .3rem 0;
+  display: flex; align-items: flex-start; gap: .5rem;
+}
+.consequences-list li i { color: var(--danger); margin-top: .15rem; flex-shrink: 0; }
+.confirm-box {
+  background: rgba(239,68,68,.06);
+  border: 1.5px solid rgba(239,68,68,.25);
+  border-radius: var(--radius);
+  padding: 1.35rem 1.5rem;
+  margin-top: 1.25rem;
+}
+.confirm-box .form-label { color: #991b1b; font-weight: 700; }
+.confirm-box .form-control { border-color: rgba(239,68,68,.35); }
+.confirm-box .form-control:focus { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(239,68,68,.12); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 640px;">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb mb-3">
+    <a href="{{ url_for('profile.view', user_id=current_user.id) }}">My Profile</a>
+    <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:.65rem;"></i></span>
+    <a href="{{ url_for('profile.edit') }}">Edit Profile</a>
+    <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:.65rem;"></i></span>
+    <span style="color:var(--danger);">Delete Account</span>
+  </div>
+
+  <!-- Warning banner -->
+  <div class="alert alert-danger mb-3" style="border-left-width:5px;">
+    <i class="fas fa-exclamation-triangle alert-icon" style="font-size:1.1rem;"></i>
+    <div class="alert-content">
+      <strong>This action is permanent and cannot be undone.</strong><br>
+      Please read the consequences below before proceeding.
+    </div>
+  </div>
+
+  <!-- Danger zone card -->
+  <div class="danger-zone">
+    <div class="danger-zone-header">
+      <div class="danger-zone-icon"><i class="fas fa-user-slash"></i></div>
+      <div>
+        <h2>Delete Your Account</h2>
+        <div style="font-size:.85rem;color:#991b1b;margin-top:.2rem;">
+          Signed in as <strong>{{ current_user.email }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Consequences -->
+    <p style="font-size:.9rem;color:#7f1d1d;font-weight:600;margin-bottom:.5rem;">
+      What will be permanently deleted:
+    </p>
+    <ul class="consequences-list" style="list-style:none;padding:0;margin:0;">
+      <li><i class="fas fa-times-circle"></i>Your profile, bio and profile photo</li>
+      <li><i class="fas fa-times-circle"></i>Your teaching and learning skill lists</li>
+      <li><i class="fas fa-times-circle"></i>All messages you have sent and received</li>
+      <li><i class="fas fa-times-circle"></i>Your notifications</li>
+    </ul>
+
+    <p style="font-size:.9rem;color:#7f1d1d;font-weight:600;margin:.85rem 0 .5rem;">
+      What will be preserved for other students:
+    </p>
+    <ul class="consequences-list" style="list-style:none;padding:0;margin:0;">
+      <li><i class="fas fa-check-circle" style="color:var(--success);"></i>Exchange request history (marked cancelled)</li>
+      <li><i class="fas fa-check-circle" style="color:var(--success);"></i>Reviews you wrote on other students' profiles</li>
+      <li><i class="fas fa-check-circle" style="color:var(--success);"></i>All other students' accounts and data</li>
+    </ul>
+
+    <!-- Confirmation form -->
+    <div class="confirm-box">
+      <form method="POST" action="{{ url_for('profile.delete_account') }}"
+            id="deleteForm" novalidate>
+
+        <!-- Password confirmation -->
+        <div class="form-group">
+          <label class="form-label" for="password">
+            <i class="fas fa-lock" style="margin-right:.3rem;"></i>
+            Confirm your password
+          </label>
+          <div class="pw-wrap input-icon-wrap">
+            <input type="password" id="password" name="password"
+                   class="form-control" placeholder="Enter your current password"
+                   required autocomplete="current-password"
+                   style="padding-left:2.75rem;padding-right:3rem;" />
+            <i class="fas fa-lock input-icon"></i>
+            <button type="button" class="pw-toggle" aria-label="Show password">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Type DELETE to confirm -->
+        <div class="form-group">
+          <label class="form-label" for="confirm">
+            <i class="fas fa-keyboard" style="margin-right:.3rem;"></i>
+            Type <code style="background:rgba(239,68,68,.15);padding:.1rem .4rem;border-radius:4px;color:var(--danger);font-weight:700;">DELETE</code> to confirm
+          </label>
+          <input type="text" id="confirm" name="confirm"
+                 class="form-control" placeholder="DELETE"
+                 autocomplete="off" required />
+          <span class="form-hint" style="color:#991b1b;">
+            This field is case-sensitive.
+          </span>
+        </div>
+
+        <div style="display:flex;gap:.75rem;margin-top:1.5rem;flex-wrap:wrap;">
+          <a href="{{ url_for('profile.edit') }}" class="btn btn-light">
+            <i class="fas fa-arrow-left"></i> Cancel — Keep My Account
+          </a>
+          <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
+            <i class="fas fa-user-slash"></i> Permanently Delete Account
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div><!-- /danger-zone -->
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* Enable the Delete button only when the user has typed DELETE exactly */
+const confirmInput = document.getElementById('confirm');
+const deleteBtn    = document.getElementById('deleteBtn');
+
+confirmInput?.addEventListener('input', () => {
+  const ready = confirmInput.value === 'DELETE';
+  deleteBtn.disabled = !ready;
+  deleteBtn.style.opacity = ready ? '1' : '.45';
+});
+
+/* Ask for one final browser-level confirmation */
+document.getElementById('deleteForm')?.addEventListener('submit', e => {
+  if (!confirm('This is your last chance. Your account will be permanently deleted.\n\nAre you absolutely sure?')) {
+    e.preventDefault();
+  }
+});
+</script>
+{% endblock %}

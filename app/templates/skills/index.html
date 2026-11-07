@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Skill Library{% endblock %}
+{% block page_title %}Skill Library{% endblock %}
+
+{% block content %}
+<div class="page-header-row mb-3">
+  <div>
+    <h1 style="font-size:1.6rem;">Skill Library</h1>
+    <p>{{ all_skills|length }} skills across {{ categories|length }} categories</p>
+  </div>
+  <a href="{{ url_for('skills.manage') }}" class="btn btn-primary">
+    <i class="fas fa-cogs"></i> Manage My Skills
+  </a>
+</div>
+
+<!-- Category filter pills -->
+<div class="category-pills mb-3">
+  <a href="{{ url_for('skills.index') }}"
+     class="category-pill {{ 'active' if not selected_category }}">
+    <i class="fas fa-th"></i> All Skills
+  </a>
+  {% for cat, icon in categories %}
+  <a href="{{ url_for('skills.index', category=cat) }}"
+     class="category-pill {{ 'active' if selected_category == cat }}">
+    <i class="fas {{ icon }}"></i> {{ cat }}
+  </a>
+  {% endfor %}
+</div>
+
+{% if all_skills %}
+  {% set ns = namespace(current_cat='') %}
+  {% for skill in all_skills %}
+    {% if skill.category != ns.current_cat %}
+      {% if ns.current_cat %}</div>{% endif %}
+      {% set ns.current_cat = skill.category %}
+      <div class="section-title-sm">
+        {% for cat, icon in categories if cat == skill.category %}
+          <i class="fas {{ icon }}" style="color:var(--primary);"></i>
+        {% endfor %}
+        {{ skill.category }}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:1.5rem;">
+    {% endif %}
+    <div style="display:inline-flex;align-items:center;gap:.6rem;
+                padding:.55rem 1.1rem;border-radius:var(--radius);
+                background:var(--bg-card);
+                border:1.5px solid {{ 'var(--success)' if skill.id in my_teaching_ids else 'var(--secondary)' if skill.id in my_learning_ids else 'var(--border-light)' }};
+                box-shadow:var(--shadow-card);font-size:.87rem;
+                transition:var(--t-fast);"
+         onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='var(--shadow)'"
+         onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow-card)'">
+      <i class="fas {{ skill.icon }}" style="color:{{ 'var(--success)' if skill.id in my_teaching_ids else 'var(--secondary)' if skill.id in my_learning_ids else 'var(--primary)' }};"></i>
+      <span style="font-weight:600;color:var(--text-primary);">{{ skill.name }}</span>
+      {% if skill.id in my_teaching_ids %}
+        <span class="badge badge-success" style="font-size:.65rem;">Teaching</span>
+      {% elif skill.id in my_learning_ids %}
+        <span class="badge badge-secondary" style="font-size:.65rem;">Learning</span>
+      {% endif %}
+      <span style="color:var(--text-muted);font-size:.75rem;">
+        {{ skill.teachers.count() }}T · {{ skill.learners.count() }}L
+      </span>
+    </div>
+  {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="fas fa-layer-group"></i></div>
+    <h3>No skills yet</h3>
+    <p>Be the first to add a skill to the KnowMitra library!</p>
+    <a href="{{ url_for('skills.manage') }}" class="btn btn-primary">Add Skills</a>
+  </div>
+{% endif %}
+{% endblock %}

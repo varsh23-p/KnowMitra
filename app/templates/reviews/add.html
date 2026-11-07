@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Leave a Review{% endblock %}
+{% block page_title %}Leave a Review{% endblock %}
+
+{% block extra_css %}
+<style>
+.review-page-wrap { max-width: 620px; }
+
+/* Animated star rating */
+.star-input-row {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  gap: .4rem;
+  margin: .75rem 0 .35rem;
+}
+.star-input-row input[type="radio"] { display: none; }
+.star-input-row label {
+  cursor: pointer;
+  font-size: 2.6rem;
+  color: #e2dff5;
+  transition: color .12s ease, transform .15s ease;
+  line-height: 1;
+}
+.star-input-row label:hover,
+.star-input-row label:hover ~ label,
+.star-input-row input[type="radio"]:checked ~ label {
+  color: #f59e0b;
+  transform: scale(1.15);
+}
+
+.rating-desc {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: var(--t-fast);
+}
+
+.review-tips { background: var(--primary-lighter); border: 1px solid var(--primary-light); border-radius: var(--radius); padding: 1rem 1.1rem; margin-bottom: 1.25rem; }
+.review-tips-title { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--primary); margin-bottom: .5rem; display: flex; align-items: center; gap: .4rem; }
+.review-tip { font-size: .83rem; color: var(--text-secondary); display: flex; align-items: flex-start; gap: .5rem; padding: .2rem 0; }
+.review-tip::before { content: '·'; color: var(--primary); font-weight: 900; flex-shrink: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="review-page-wrap">
+  <div class="breadcrumb mb-2">
+    <a href="{{ url_for('exchanges.index', tab='completed') }}">Exchanges</a>
+    <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:.65rem;"></i></span>
+    <span>Leave Review</span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 style="margin:0;font-size:1.1rem;">
+          <i class="fas fa-star" style="color:var(--warning);margin-right:.4rem;"></i>
+          Rate Your Exchange
+        </h3>
+        <div style="font-size:.8rem;color:var(--text-muted);margin-top:.15rem;">
+          Your feedback helps the KnowMitra community
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- Reviewee profile card -->
+      <div style="display:flex;align-items:center;gap:1rem;padding:1.1rem;background:var(--primary-lighter);border-radius:var(--radius);border:1px solid var(--primary-light);margin-bottom:1.75rem;">
+        {% if reviewee.profile_photo and reviewee.profile_photo != 'default_avatar.png' %}
+          <img src="{{ url_for('static', filename='uploads/' + reviewee.profile_photo) }}"
+               class="avatar avatar-md" alt="{{ reviewee.full_name }}"
+               data-initials="{{ reviewee.full_name[0].upper() }}"/>
+        {% else %}
+          <div class="avatar-placeholder avatar-md">{{ reviewee.full_name[0].upper() }}</div>
+        {% endif %}
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:800;font-size:1.05rem;">{{ reviewee.full_name }}</div>
+          <div style="font-size:.83rem;color:var(--text-muted);">
+            {{ reviewee.college or 'Student' }}
+            {% if reviewee.year %} · {{ reviewee.year }}{% endif %}
+          </div>
+          <!-- Exchange skills summary -->
+          <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem;">
+            {% if exchange.skill_offered %}
+              <span class="skill-tag skill-tag-teach" style="font-size:.74rem;">
+                <i class="fas fa-chalkboard-teacher"></i> {{ exchange.skill_offered.name }}
+              </span>
+            {% endif %}
+            {% if exchange.skill_requested %}
+              <span class="skill-tag skill-tag-learn" style="font-size:.74rem;">
+                <i class="fas fa-graduation-cap"></i> {{ exchange.skill_requested.name }}
+              </span>
+            {% endif %}
+          </div>
+        </div>
+        <div style="text-align:center;padding:.65rem .9rem;background:rgba(255,255,255,.6);border-radius:var(--radius-sm);">
+          <div style="font-size:1.3rem;font-weight:800;color:var(--primary);">{{ reviewee.avg_rating }}</div>
+          <div style="font-size:.7rem;color:var(--text-muted);">Current rating</div>
+        </div>
+      </div>
+
+      <!-- Writing tips -->
+      <div class="review-tips">
+        <div class="review-tips-title"><i class="fas fa-lightbulb"></i> Tips for a great review</div>
+        <div class="review-tip">Be specific about what they taught and how well they explained it</div>
+        <div class="review-tip">Mention punctuality, communication, and enthusiasm</div>
+        <div class="review-tip">Keep it honest and constructive — future students rely on your feedback</div>
+      </div>
+
+      <form method="POST" action="{{ url_for('reviews.add', exchange_id=exchange.id) }}">
+
+        <!-- Star rating input -->
+        <div class="form-group">
+          <label class="form-label">
+            Your Rating <span class="required">*</span>
+          </label>
+          <div class="star-input-row" id="starRow">
+            {% for v in [5, 4, 3, 2, 1] %}
+              <input type="radio" name="rating" id="star{{ v }}" value="{{ v }}" required/>
+              <label for="star{{ v }}" title="{{ v }} star{% if v > 1 %}s{% endif %}">
+                <i class="fas fa-star"></i>
+              </label>
+            {% endfor %}
+          </div>
+          <div class="rating-desc" id="ratingDesc">
+            <i class="fas fa-hand-point-left" style="font-size:.8rem;opacity:.5;"></i>
+            Click to rate
+          </div>
+        </div>
+
+        <!-- Written feedback -->
+        <div class="form-group">
+          <label class="form-label" for="feedback">
+            Written Feedback
+            <span style="font-weight:400;color:var(--text-muted);">(optional but appreciated)</span>
+          </label>
+          <textarea id="feedback" name="feedback" class="form-control" rows="5"
+                    placeholder="Share your experience with {{ reviewee.full_name.split()[0] }}…"
+                    data-maxlength="500" data-count-target="fbCounter"></textarea>
+          <span class="form-hint" id="fbCounter">500 characters remaining</span>
+        </div>
+
+        <div style="display:flex;gap:.75rem;justify-content:flex-end;border-top:1px solid var(--border-light);padding-top:1.25rem;">
+          <a href="{{ url_for('exchanges.index', tab='completed') }}" class="btn btn-light">
+            <i class="fas fa-times"></i> Skip
+          </a>
+          <button type="submit" class="btn btn-warning" id="submitBtn" disabled>
+            <i class="fas fa-star"></i> Submit Review
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const labels = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
+const colors = ['', '#ef4444', '#f97316', '#3b82f6', '#10b981', '#f59e0b'];
+const icons  = ['', 'fa-frown', 'fa-meh', 'fa-smile', 'fa-grin', 'fa-grin-stars'];
+
+const ratingDesc = document.getElementById('ratingDesc');
+const submitBtn  = document.getElementById('submitBtn');
+
+document.querySelectorAll('.star-input-row input').forEach(input => {
+  input.addEventListener('change', () => {
+    const v = parseInt(input.value);
+    ratingDesc.innerHTML = `<i class="fas ${icons[v]}" style="color:${colors[v]};font-size:1.1rem;"></i> <strong style="color:${colors[v]};">${labels[v]}</strong>`;
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = '1';
+  });
+});
+
+// Hover preview
+document.querySelectorAll('.star-input-row label').forEach(label => {
+  label.addEventListener('mouseenter', () => {
+    const forAttr = label.getAttribute('for');
+    const v = parseInt(forAttr.replace('star', ''));
+    ratingDesc.innerHTML = `<i class="fas ${icons[v]}" style="color:${colors[v]};font-size:1.1rem;opacity:.7;"></i> <span style="color:var(--text-muted);">${labels[v]}</span>`;
+  });
+  label.addEventListener('mouseleave', () => {
+    const checked = document.querySelector('.star-input-row input:checked');
+    if (!checked) {
+      ratingDesc.innerHTML = '<i class="fas fa-hand-point-left" style="font-size:.8rem;opacity:.5;"></i> Click to rate';
+    }
+  });
+});
+</script>
+{% endblock %}
