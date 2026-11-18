@@ -1,4 +1,4 @@
-# SkillSwap – Student Skill Exchange Platform
+# KnowMitra – Student Skill Exchange Platform
 
 > A full-stack web application where college students teach skills they know and learn new ones from peers — **no money involved, just knowledge**.
 
